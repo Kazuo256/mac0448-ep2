@@ -1,0 +1,8 @@
+*~
+.*.swp
+CMakeCache.txt
+CMakeFiles
+/Makefile
+cmake_install.cmake
+ep2-client
+ep2-server
