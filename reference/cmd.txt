@@ -1,0 +1,9 @@
+/disconnect
+/nick ________
+/msg nick _______
+/send nick _______
+/list
+/quit
+/exit
+/accept
+/refuse
