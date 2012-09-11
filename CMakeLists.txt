@@ -9,6 +9,7 @@ set (EP2_SRC)
 add_executable (
   ep2-client
   src/client.cxx
+  src/prompt.cxx
   ${EP2_SRC}
 )
 
@@ -21,6 +22,6 @@ add_executable (
 set_target_properties (
   ep2-client ep2-server
   PROPERTIES COMPILE_FLAGS
-  "-ansi -Wall -O2"
+  "-ansi -Wall -g -O0"
 )
 

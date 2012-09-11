@@ -23,7 +23,11 @@
 /* Para resolver os nomes com a função gethostbyname */
 #include <netdb.h>
 
+#include "prompt.h"
+
 #define MAXLINE 4096
+
+using ep2::Prompt;
 
 int main(int argc, char **argv) {
 	int	    sockfd, n;
@@ -120,19 +124,22 @@ int main(int argc, char **argv) {
    
   n=1;
 	while (n != 0)  {
+    Prompt prompt(sockfd);
+    prompt.init();
+    prompt.run();
     if ((fgets(recvline,MAXLINE,stdin)) != NULL) {
       if (!strcmp(recvline,"exit\n")) n=0;
-        else {
-          /* Escreve a linha lida no socket */
-          write(sockfd, recvline, strlen(recvline));
-          /* Lê a linha reenviada pelo servidor e escreve na saída padrão */
-          n=read(sockfd,recvline,MAXLINE);
-          recvline[n]=0;
-          if ((fputs(recvline,stdout)) == EOF) {
-            perror("fputs error");
-            exit (1);
-          }
-       }
+      else {
+        /* Escreve a linha lida no socket */
+        write(sockfd, recvline, strlen(recvline));
+        /* Lê a linha reenviada pelo servidor e escreve na saída padrão */
+        n=read(sockfd,recvline,MAXLINE);
+        recvline[n]=0;
+        if ((fputs(recvline,stdout)) == EOF) {
+          perror("fputs error");
+          exit (1);
+        }
+      }
     }
     else n=0;
 	}
