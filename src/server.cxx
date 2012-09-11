@@ -28,11 +28,11 @@
 int main (int argc, char **argv) {
 	int    listenfd, connfd;
 	struct sockaddr_in servaddr;
-   struct sockaddr_in dadosRemoto;
-   int    dadosRemotoLen;
-   char   enderecoRemoto[MAXDATASIZE + 1];
-   ssize_t  n;
-   pid_t  childpid;
+	struct sockaddr_in dadosRemoto;
+	int    dadosRemotoLen;
+	char   enderecoRemoto[MAXDATASIZE + 1];
+	ssize_t  n;
+	pid_t  childpid;
 	char	recvline[MAXLINE + 1];
 
 	if (argc != 2) {
@@ -46,8 +46,8 @@ int main (int argc, char **argv) {
 	}
 
 	bzero(&servaddr, sizeof(servaddr));
-   dadosRemotoLen=sizeof(dadosRemoto);
-   bzero(&dadosRemoto, dadosRemotoLen);
+	dadosRemotoLen=sizeof(dadosRemoto);
+	bzero(&dadosRemoto, dadosRemotoLen);
 	servaddr.sin_family      = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	servaddr.sin_port        = htons(atoi(argv[1]));
@@ -63,36 +63,36 @@ int main (int argc, char **argv) {
 	}
 
 	for ( ; ; ) {
-      // Com isso não precisa usar o getpeername. Antes no lugar dos dados do
-      // dadosRemoto, tinha NULL
+    // Com isso não precisa usar o getpeername. Antes no lugar dos dados do
+    // dadosRemoto, tinha NULL
 		if ((connfd = accept(listenfd, (struct sockaddr *) &dadosRemoto, (socklen_t *) &dadosRemotoLen)) == -1 ) {
 			perror("accept");
 			exit(1);
-		}
-      /* Imprimindo os dados do socket remoto */
-      printf("Dados do socket remoto: (IP: %s, PORTA: %d conectou)\n",inet_ntop(AF_INET, &(dadosRemoto.sin_addr).s_addr,enderecoRemoto,sizeof(enderecoRemoto)), ntohs(dadosRemoto.sin_port));
+  	}
+    /* Imprimindo os dados do socket remoto */
+    printf("Dados do socket remoto: (IP: %s, PORTA: %d conectou)\n",inet_ntop(AF_INET, &(dadosRemoto.sin_addr).s_addr,enderecoRemoto,sizeof(enderecoRemoto)), ntohs(dadosRemoto.sin_port));
 
-      if ( (childpid = fork()) == 0) { /* Se for zero está no processo filho */
-         close(listenfd);  /* Fecha o socket que está escutando (só precisa de 1) */
-         
-         /* Processa tudo que for enviado do cliente conectado */
-         while ((n=read(connfd, recvline, MAXLINE)) > 0) {
-            /* Lê a linha enviada pelo cliente e escreve na saída padrão */
-            recvline[n]=0;
-            if ((fputs(recvline,stdout)) == EOF) {
-               perror("fputs error");
-               exit (1);
-            }
-            /* Agora re-envia a linha para o cliente */
-            write(connfd, recvline, strlen(recvline));
-         }
-         /******************************************************/
-         printf("Dados do socket remoto: (IP: %s, PORTA: %d desconectou)\n",inet_ntop(AF_INET, &(dadosRemoto.sin_addr).s_addr,enderecoRemoto,sizeof(enderecoRemoto)), ntohs(dadosRemoto.sin_port));
-         exit (0);         /* Termina o processo filho */
-      }
-      
-      /* Se for o pai continua a execução aqui... */
-		close(connfd);
+    if ( (childpid = fork()) == 0) { /* Se for zero está no processo filho */
+       close(listenfd);  /* Fecha o socket que está escutando (só precisa de 1) */
+       
+       /* Processa tudo que for enviado do cliente conectado */
+       while ((n=read(connfd, recvline, MAXLINE)) > 0) {
+          /* Lê a linha enviada pelo cliente e escreve na saída padrão */
+          recvline[n]=0;
+          if ((fputs(recvline,stdout)) == EOF) {
+             perror("fputs error");
+             exit (1);
+          }
+          /* Agora re-envia a linha para o cliente */
+          write(connfd, recvline, strlen(recvline));
+       }
+       /******************************************************/
+       printf("Dados do socket remoto: (IP: %s, PORTA: %d desconectou)\n",inet_ntop(AF_INET, &(dadosRemoto.sin_addr).s_addr,enderecoRemoto,sizeof(enderecoRemoto)), ntohs(dadosRemoto.sin_port));
+       exit (0);         /* Termina o processo filho */
+    }
+        
+    /* Se for o pai continua a execução aqui... */
+    close(connfd);
 	}
 	return(0);
 }
