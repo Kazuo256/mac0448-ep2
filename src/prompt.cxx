@@ -64,6 +64,7 @@ void Prompt::run () {
     char *cmd, *arg, *data;
     if (!fgets(cmdline, MAXLINE, stdin)) break;
     cmd = strtok_r(cmdline, " \t\n", &saveptr);
+    if (cmd == NULL) continue;
     arg = strtok_r(NULL, " \t\n", &saveptr);
     data = strtok_r(NULL, "\n", &saveptr);
     if (!check_cmd(cmd?cmd:"", arg?arg:"", data?data:"")) {
