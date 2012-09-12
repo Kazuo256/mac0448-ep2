@@ -70,7 +70,6 @@ void Prompt::run () {
     if (!check_cmd(cmd?cmd:"", arg?arg:"", data?data:"")) {
       /* Escreve a linha lida no socket */
       write(sockfd_, "oi\n", strlen(cmdline));
-
       /* Lê a linha reenviada pelo servidor e escreve na saída padrão */
       int n=read(sockfd_, cmdline, MAXLINE);
       cmdline[n]=0;

@@ -4,7 +4,7 @@
 
 #include <string>
 #include <vector>
-#include <pair>
+#include <utility>
 
 namespace ep2 {
 
@@ -13,9 +13,9 @@ class Command {
   public:
 
     // Client commands
-    static Command disconnect ();
     static Command nick (const std::string& name); 
     static Command msg (const std::string& name, const std::string& msg);
+    static Command disconnect ();
     static Command send (const std::string& name, const std::string& path);
     static Command list ();
     static Command accept (const std::string& name, const std::string& file);
@@ -27,7 +27,15 @@ class Command {
     typedef std::pair<byte, std::string>  arg_t;
     typedef std::vector<arg_t>            arg_list;
 
-    Command (byte opcode, byte len, const arg_list& data);
+    byte      opcode_;
+    arg_list  data_;
+
+    const static byte NICK = 0x1,
+                      DISCONNECT = 0x2,
+                      MSG = 0x3;
+
+    Command (byte opcode, const arg_list& data) :
+      opcode_(opcode), data_(data) {}
 
 };
 

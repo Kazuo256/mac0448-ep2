@@ -10,12 +10,14 @@ add_executable (
   ep2-client
   src/client.cxx
   src/prompt.cxx
+  src/command.cxx
   ${EP2_SRC}
 )
 
 add_executable (
   ep2-server
   src/server.cxx
+  src/command.cxx
   ${EP2_SRC}
 )
 
