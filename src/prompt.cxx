@@ -14,12 +14,47 @@ using std::string;
 using std::vector;
 using std::map;
 
+static void handle_disconnect (const string& arg, const string& data) {
+  puts(string("ADEUS OTÁRIOS").c_str());
+}
+
 static void handle_nick (const string& arg, const string& data) {
   puts((string("Loging with nick '")+arg+"'").c_str());
 }
 
+static void handle_msg (const string& arg, const string& data) {
+  puts((string("Falando com o brother '")+arg+"' msg '"+data+"'").c_str());
+}
+
+static void handle_send (const string& arg, const string& data) {
+  puts((string("Aceita o role ai brother '")+arg+"' dado '"+data+"'").c_str());
+}
+
+static void handle_list (const string& arg, const string& data) {
+  puts((string("Manda os brothers logado ai tio ")).c_str());
+}
+
+static void handle_exit (const string& arg, const string& data) {
+  puts(string("ADEUS OTÁRIOS, EXITEI").c_str());
+}
+
+static void handle_accept (const string& arg, const string& data) {
+  puts(string("Pode manda os role").c_str());
+}
+
+static void handle_refuse (const string& arg, const string& data) {
+  puts(string("Quero sabe disso ai n tio, flwz").c_str());
+}
+
 void Prompt::init () {
+  cmd_map["/disconnect"] = handle_disconnect;
   cmd_map["/nick"] = handle_nick;
+  cmd_map["/msg"] = handle_msg;
+  cmd_map["/send"] = handle_send;
+  cmd_map["/list"] = handle_list;
+  cmd_map["/exit"] = handle_exit;
+  cmd_map["/accept"] = handle_accept;
+  cmd_map["/refuse"] = handle_refuse;
 }
 
 void Prompt::run () {
