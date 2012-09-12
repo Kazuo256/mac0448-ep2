@@ -15,8 +15,11 @@ class Prompt {
     void run ();
   private:
     typedef void (*cmd_handler) (const std::string& arg, const std::string& data);
-    int sockfd_;
-    std::map<std::string, cmd_handler> cmd_map;
+    typedef std::map<std::string, cmd_handler> CommandMap;
+    int         sockfd_;
+    CommandMap  cmd_map;
+    bool check_cmd (const std::string& cmd, const std::string& arg,
+                    const std::string& data);
 };
 
 } // namespace ep2
