@@ -70,7 +70,9 @@ int main (int argc, char **argv) {
 			exit(1);
   	}
     /* Imprimindo os dados do socket remoto */
-    printf("Dados do socket remoto: (IP: %s, PORTA: %d conectou)\n",inet_ntop(AF_INET, &(dadosRemoto.sin_addr).s_addr,enderecoRemoto,sizeof(enderecoRemoto)), ntohs(dadosRemoto.sin_port));
+    printf("Dados do socket remoto: (IP: %s, PORTA: %d conectou)\n",
+           inet_ntop(AF_INET, &(dadosRemoto.sin_addr).s_addr,enderecoRemoto,sizeof(enderecoRemoto)),
+           ntohs(dadosRemoto.sin_port));
 
     if ( (childpid = fork()) == 0) { /* Se for zero está no processo filho */
        close(listenfd);  /* Fecha o socket que está escutando (só precisa de 1) */
