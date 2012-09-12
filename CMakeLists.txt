@@ -18,6 +18,10 @@ add_executable (
   ep2-server
   src/server.cxx
   src/command.cxx
+  src/command.h
+  src/TCPconnection.cxx
+  src/TCPconnection.h
+  src/connection.h
   ${EP2_SRC}
 )
 
