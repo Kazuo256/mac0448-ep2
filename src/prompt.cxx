@@ -86,6 +86,10 @@ void Prompt::run () {
     write(sockfd_, packet.c_str(), packet.size());
     /* Lê a linha reenviada pelo servidor e escreve na saída padrão */
     int n=read(sockfd_, cmdline, MAXLINE);
+	  if (n < 0) {
+	  	perror("read error");
+	  	exit(1);
+	  }
     cmdline[n]=0;
     if ((fputs(cmdline,stdout)) == EOF) {
       perror("fputs error");

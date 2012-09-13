@@ -17,6 +17,7 @@
 #include <string>
 
 #include "command.h"
+#include "serverhandler.h"
 
 #define LISTENQ 1
 #define MAXDATASIZE 100
@@ -98,7 +99,7 @@ void TCPConnection::accept () {
           /* Lê a linha enviada pelo cliente e escreve na saída padrão */
           recvline[n]=0;
           Command cmd = Command::from_packet(recvline);
-          puts(string(cmd).c_str());
+          ServerHandler().handle(cmd);
           if ((fputs(recvline,stdout)) == EOF) {
              perror("fputs error");
              exit (1);

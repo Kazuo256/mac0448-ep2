@@ -22,6 +22,9 @@ add_executable (
   src/TCPconnection.cxx
   src/TCPconnection.h
   src/connection.h
+  src/commandhandler.h
+  src/serverhandler.cxx
+  src/serverhandler.h
   ${EP2_SRC}
 )
 

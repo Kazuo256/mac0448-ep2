@@ -125,29 +125,6 @@ int main(int argc, char **argv) {
   Prompt prompt(sockfd);
   prompt.init();
   prompt.run();
-  //n=1;
-	//while (n != 0)  {
-  //  if ((fgets(recvline,MAXLINE,stdin)) != NULL) {
-  //    if (!strcmp(recvline,"exit\n")) n=0;
-  //    else {
-  //      /* Escreve a linha lida no socket */
-  //      write(sockfd, recvline, strlen(recvline));
-  //      /* Lê a linha reenviada pelo servidor e escreve na saída padrão */
-  //      n=read(sockfd,recvline,MAXLINE);
-  //      recvline[n]=0;
-  //      if ((fputs(recvline,stdout)) == EOF) {
-  //        perror("fputs error");
-  //        exit (1);
-  //      }
-  //    }
-  //  }
-  //  else n=0;
-	//}
-
-	//if (n < 0) {
-	//	perror("read error");
-	//	exit(1);
-	//}
    
 	exit(0);
 }
