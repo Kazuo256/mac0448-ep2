@@ -31,9 +31,9 @@ Command Command::from_packet (const string& packet) {
   Command cmd(packet[0]);
   if (packet[0] != NICK) return Command(255);
   for (size_t pos = 2, count = 0;
-       count < static_cast<size_t>(packet[1]);
+       count < static_cast<size_t>(packet[1]) && pos < packet.size();
        pos += packet[pos]+1, ++count)
-    cmd.data_.push_back(packet.substr(pos+1, pos+1+packet[pos]));
+    cmd.data_.push_back(packet.substr(pos+1, packet[pos]));
 
   return cmd;
 }
