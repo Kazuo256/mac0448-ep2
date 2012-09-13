@@ -71,6 +71,11 @@ void Prompt::init () {
   cmd_map["/refuse"] = handle_refuse;
 }
 
+static void send_disconnect (int sockfd) {
+  string packet = Command::disconnect().make_packet();
+  write(sockfd, packet.c_str(), packet.size());
+}
+
 void Prompt::run () {
   while (true) {
     string packet;

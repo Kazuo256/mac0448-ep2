@@ -12,14 +12,22 @@ class Connection {
 
   public:
 
-    virtual ~Connection () { close(sockfd_); }
+    virtual ~Connection () {
+      printf("closing socket %d\n", sockfd_);
+      close(sockfd_);
+    }
+
+    int sockfd () const { return sockfd_; }
 
     // Server side methods
     virtual void host (unsigned short port) = 0; 
-    virtual void accept () = 0;
+    virtual Connection* accept () = 0;
 
     // Client side methods
     virtual bool connect (const std::string& hostname, unsigned short port) = 0;
+
+    // Either side methods
+    virtual std::string receive () = 0;
     virtual void send (const std::string& data) = 0;
 
   protected:
@@ -30,8 +38,6 @@ class Connection {
         exit(1);
       }
     }
-
-    int sockfd () const { return sockfd_; }
 
   private:
 

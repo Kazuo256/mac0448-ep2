@@ -25,6 +25,8 @@ add_executable (
   src/commandhandler.h
   src/serverhandler.cxx
   src/serverhandler.h
+  src/inputlistener.cxx
+  src/inputlistener.h
   ${EP2_SRC}
 )
 

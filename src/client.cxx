@@ -125,6 +125,8 @@ int main(int argc, char **argv) {
   Prompt prompt(sockfd);
   prompt.init();
   prompt.run();
+  close(sockfd);
    
 	exit(0);
 }
+

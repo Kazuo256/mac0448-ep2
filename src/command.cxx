@@ -42,5 +42,9 @@ Command Command::nick (const string& name) {
   return Command(NICK, arg_list(1, name));
 }
 
+Command Command::disconnect () {
+  return Command(DISCONNECT, arg_list());
+}
+
 } // namespace ep2
 

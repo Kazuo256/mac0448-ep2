@@ -11,14 +11,15 @@ class TCPConnection : public Connection {
   public:
 
     TCPConnection ();
+    TCPConnection (int sockfd);
     
     void host (unsigned short port);
-    void accept ();
+    Connection* accept ();
 
-    bool connect (const std::string& hostname, unsigned short port) {
-      return false;
-    }
-    void send (const std::string& data) {}
+    bool connect (const std::string& hostname, unsigned short port);
+
+    std::string receive ();
+    void send (const std::string& data);
 
 };
 
