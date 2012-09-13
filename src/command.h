@@ -12,6 +12,12 @@ class Command {
 
   public:
 
+    std::string make_packet () const;
+
+    operator std::string () const;
+
+    static Command from_packet (const std::string& packet);
+
     // Client commands
     static Command nick (const std::string& name); 
     static Command msg (const std::string& name, const std::string& msg);
@@ -23,9 +29,8 @@ class Command {
 
   private:
 
-    typedef unsigned char                 byte;
-    typedef std::pair<byte, std::string>  arg_t;
-    typedef std::vector<arg_t>            arg_list;
+    typedef unsigned char             byte;
+    typedef std::vector<std::string>  arg_list;
 
     byte      opcode_;
     arg_list  data_;
@@ -34,7 +39,7 @@ class Command {
                       DISCONNECT = 0x2,
                       MSG = 0x3;
 
-    Command (byte opcode, const arg_list& data) :
+    Command (byte opcode, const arg_list& data = arg_list()) :
       opcode_(opcode), data_(data) {}
 
 };

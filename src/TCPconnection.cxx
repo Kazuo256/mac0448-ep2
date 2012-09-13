@@ -14,11 +14,17 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+#include <string>
+
+#include "command.h"
+
 #define LISTENQ 1
 #define MAXDATASIZE 100
 #define MAXLINE 4096
 
 namespace ep2 {
+
+using std::string;
 
 /*
  *  struct sockaddr {
@@ -91,6 +97,8 @@ void TCPConnection::accept () {
        while ((n=read(connfd, recvline, MAXLINE)) > 0) {
           /* Lê a linha enviada pelo cliente e escreve na saída padrão */
           recvline[n]=0;
+          Command cmd = Command::from_packet(recvline);
+          puts(string(cmd).c_str());
           if ((fputs(recvline,stdout)) == EOF) {
              perror("fputs error");
              exit (1);
