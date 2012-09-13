@@ -5,7 +5,8 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
-
+#include <sstream>
+#include <iostream>
 #include "command.h"
 
 #define MAXLINE 4096
@@ -15,6 +16,9 @@ namespace ep2 {
 using std::string;
 using std::vector;
 using std::map;
+using std::cin;
+using std::cout;
+using std::stringstream;
 
 static string handle_disconnect (const string& arg, const string& data) {
   puts(string("ADEUS OTÁRIOS").c_str());
@@ -71,14 +75,13 @@ void Prompt::run () {
   while (true) {
     string packet;
     char cmdline[MAXLINE+1];
-    char *saveptr = NULL;
-    char *cmd, *arg, *data;
-    if (!fgets(cmdline, MAXLINE, stdin)) break;
-    cmd = strtok_r(cmdline, " \t\n", &saveptr);
-    if (cmd == NULL) continue;
-    arg = strtok_r(NULL, " \t\n", &saveptr);
-    data = strtok_r(NULL, "\n", &saveptr);
-    packet = check_cmd(cmd?cmd:"", arg?arg:"", data?data:"");
+    string line;
+    string cmd, arg, data;
+    getline(cin, line);
+    if (cin.eof()) break;
+    stringstream tokens(line);
+    tokens >> cmd >> arg >> data;
+    packet = check_cmd(cmd, arg, data);
     /* Escreve a linha lida no socket */
     write(sockfd_, packet.c_str(), packet.size());
     /* Lê a linha reenviada pelo servidor e escreve na saída padrão */
