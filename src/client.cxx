@@ -1,38 +1,26 @@
-/* Código simples de um cliente de echo.
- * Não é o código ideal mas é suficiente para exemplificar os
- * conceitos da disciplina de redes de computadores.
- *
- * Prof. Daniel Batista em 28/08/2011. Baseado em código do livro do
- * Stevens.
- *
- * Bugs? Tente consertar primeiro! Depois me envie email :) batista@ime.usp.br
- */
-
-//#include <sys/socket.h>
-//#include <sys/types.h>
-//#include <arpa/inet.h>
-//#include <netinet/in.h>
-//#include <stdio.h>
-//#include <netdb.h>
-//#include <string.h>
-//#include <errno.h>
-//#include <string.h>
-//#include <stdlib.h>
-//#include <unistd.h>
-
-/* Para resolver os nomes com a função gethostbyname */
-//#include <netdb.h>
 
 #include <cstdlib>
 #include <cstdio>
 
 #include "prompt.h"
 #include "TCPconnection.h"
+#include "eventmanager.h"
 
 #define MAXLINE 4096
 
 using ep2::Prompt;
 using ep2::TCPConnection;
+using ep2::EventManager;
+
+static EventManager   manager;
+static Prompt         prompt;
+static TCPConnection  server;
+
+static EventManager::Status prompt_event () {
+  return prompt.send_command(&server)
+    ? EventManager::CONTINUE
+    : EventManager::EXIT;
+}
 
 int main(int argc, char **argv) {
 
@@ -41,11 +29,10 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-  TCPConnection client;
-  client.connect(argv[1], atoi(argv[2]));
-  Prompt prompt(client.sockfd());
+  server.connect(argv[1], atoi(argv[2]));
   prompt.init();
-  prompt.run();
+  manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
+  manager.loop();
    
   return 0;
 }

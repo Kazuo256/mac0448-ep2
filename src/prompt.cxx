@@ -7,7 +7,9 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+
 #include "command.h"
+#include "connection.h"
 
 #define MAXLINE 4096
 
@@ -71,33 +73,32 @@ void Prompt::init () {
   cmd_map_["/refuse"] = handle_refuse;
 }
 
-void Prompt::run () {
-  while (true) {
-    string packet;
-    char cmdline[MAXLINE+1];
-    string line;
-    string cmd, arg, data;
-    getline(cin, line);
-    if (cin.eof()) break;
-    stringstream tokens(line);
-    tokens >> cmd >> arg >> data;
-    packet = check_cmd(cmd, arg, data);
-    /* Escreve a linha lida no socket */
-    write(sockfd_, packet.c_str(), packet.size());
-    /* Lê a linha reenviada pelo servidor e escreve na saída padrão */
-    int n=read(sockfd_, cmdline, MAXLINE);
-	  if (n < 0) {
-	  	perror("read error");
-	  	exit(1);
-	  }
-    cmdline[n]=0;
-    if ((fputs(cmdline,stdout)) == EOF) {
-      perror("fputs error");
-      exit (1);
-    }
-    
+bool Prompt::send_command (Connection *server) {
+  string packet, response;
+  char cmdline[MAXLINE+1];
+  string line;
+  string cmd, arg, data;
+  getline(cin, line);
+  if (cin.eof()) return false;
+  stringstream tokens(line);
+  tokens >> cmd >> arg >> data;
+  packet = check_cmd(cmd, arg, data);
+  /* Escreve a linha lida no socket */
+  server->send(packet);
+  //write(sockfd_, packet.c_str(), packet.size());
+  /* Lê a linha reenviada pelo servidor e escreve na saída padrão */
+  //int n=read(sockfd_, cmdline, MAXLINE);
+  response = server->receive();
+  //if (n < 0) {
+  //  perror("read error");
+  //	exit(1);
+  //}
+  //cmdline[n]=0;
+  if ((fputs(response.c_str(),stdout)) == EOF) {
+    perror("fputs error");
+    exit (1);
   }
-  //send_disconnect(sockfd_);
+  return true;
 }
 
 string Prompt::check_cmd (const string& cmd, const string& arg,

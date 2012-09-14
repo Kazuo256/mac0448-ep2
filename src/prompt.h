@@ -7,13 +7,14 @@
 
 namespace ep2 {
 
+class Connection;
+
 class Prompt {
   public:
-    Prompt (int sockfd) :
-      sockfd_(sockfd) {}
+    Prompt () {}
     ~Prompt () { cmd_map_.clear(); }
     void init ();
-    void run ();
+    bool send_command (Connection* server);
   private:
     typedef std::string (*cmd_handler) (const std::string& arg,
                                         const std::string& data);
