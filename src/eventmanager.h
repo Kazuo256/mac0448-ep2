@@ -24,10 +24,8 @@ class EventManager {
     EventManager () {}
     ~EventManager () { fds_.clear(); }
 
-    void add_input (int fd, const Callback& callback);
-    void remove_input (int fd);
-    void listen ();
-    void poll (std::vector<int>& ready);
+    void add_event (int fd, const Callback& callback);
+    void loop ();
 
   private:
 
@@ -36,6 +34,7 @@ class EventManager {
     EventTable fds_;
 
     Status call_event (int fd);
+    void poll (std::vector<int>& ready);
 
 };
 

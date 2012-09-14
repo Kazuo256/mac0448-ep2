@@ -11,15 +11,11 @@ namespace ep2 {
 
 using std::vector;
 
-void EventManager::add_input (int fd, const Callback& callback) {
+void EventManager::add_event (int fd, const Callback& callback) {
   fds_[fd] = callback;
 }
 
-void EventManager::remove_input (int fd) {
-  fds_.erase(fd);
-}
-
-void EventManager::listen () {
+void EventManager::loop () {
   while (true) {
     vector<int> fds;
     // poll for new events

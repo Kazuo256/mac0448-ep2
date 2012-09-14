@@ -26,7 +26,7 @@ typedef map<int, Connection*> ConnectionTable;
 
 static TCPConnection    server;
 static ConnectionTable  table;
-static EventManager    listener;
+static EventManager    manager;
 
 static void clear_clients (ConnectionTable& table) {
   for (ConnectionTable::iterator it = table.begin(); it != table.end(); ++it)
@@ -65,7 +65,7 @@ static EventManager::Status command_event (Connection* client) {
 static EventManager::Status accept_event () {
   Connection *client = server.accept();
   table[client->sockfd()] = client;
-  listener.add_input(client->sockfd(), std::tr1::bind(command_event, client));
+  manager.add_event(client->sockfd(), std::tr1::bind(command_event, client));
   return EventManager::CONTINUE;
 }
 
@@ -77,9 +77,9 @@ int main (int argc, char **argv) {
 		exit(1);
 	}
   server.host(atoi(argv[1]));
-  listener.add_input(STDIN_FILENO, EventManager::Callback(prompt_event));
-  listener.add_input(server.sockfd(), EventManager::Callback(accept_event));
-  listener.listen();
+  manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
+  manager.add_event(server.sockfd(), EventManager::Callback(accept_event));
+  manager.loop();
   clear_clients(table);
 	return 0;
 }
