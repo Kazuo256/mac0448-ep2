@@ -50,6 +50,7 @@ int main (int argc, char **argv) {
       }
       else if ((client = get_client(table, *it)) != NULL) {
         string packet = client->receive();
+        // Check end of client msgs
         if (!packet.size()) {
           table.erase(*it);
           delete client;

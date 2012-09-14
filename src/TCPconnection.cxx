@@ -94,14 +94,12 @@ static void wait_input (int fd) {
 }
 
 Connection* TCPConnection::accept () {
-	int    connfd;
-	int    remote_info_size;
-	char   enderecoRemoto[MAXDATASIZE + 1];
-	ssize_t  n;
-	pid_t  childpid;
-	char	recvline[MAXLINE + 1];
+	int                 connfd;
+  struct sockaddr_in  remote_info;
+	int                 remote_info_size;
+	char                enderecoRemoto[MAXDATASIZE + 1];
 	remote_info_size = sizeof(remote_info_);
-	if ((connfd = ::accept(sockfd(), (struct sockaddr*) &remote_info_,
+	if ((connfd = ::accept(sockfd(), (struct sockaddr*) &remote_info,
                        (socklen_t *) &remote_info_size)) == -1 ) {
 		perror("accept");
 		exit(1);
@@ -110,13 +108,16 @@ Connection* TCPConnection::accept () {
   printf("Dados do socket remoto: (IP: %s, PORTA: %d conectou)\n",
          inet_ntop(
            AF_INET,
-           &(remote_info_.sin_addr).s_addr,
+           &(remote_info.sin_addr).s_addr,
            enderecoRemoto,
            sizeof(enderecoRemoto)
           ),
-         ntohs(remote_info_.sin_port));
-  remote_addr_ = enderecoRemoto;
-  return new TCPConnection(connfd);
+         ntohs(remote_info.sin_port));
+  TCPConnection *accepted = new TCPConnection(connfd);
+  accepted->local_info_  = local_info_;
+  accepted->remote_info_ = remote_info;
+  accepted->remote_addr_ = enderecoRemoto;
+  return accepted;
 	//for ( ; ; ) {
   //  // Com isso não precisa usar o getpeername. Antes no lugar dos dados do
   //  // remote_info_, tinha NULL
