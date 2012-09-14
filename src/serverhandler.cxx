@@ -20,7 +20,7 @@ ServerHandler::ServerHandler () :
   CommandHandler() {}
 
 void ServerHandler::handle (Connection *connection, const Command& cmd) {
-  //cout << static_cast<string>(cmd) << "\n";
+  cout << static_cast<string>(cmd) << "\n";
   Command response = Command::null_cmd();
   stringstream args;
   switch(cmd.opcode()) {

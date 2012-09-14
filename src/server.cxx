@@ -46,8 +46,6 @@ static EventManager::Status prompt_event () {
 
 static EventManager::Status command_event (Connection* client) {
   Command cmd = client->receive();
-  puts("HEY");
-  cout << (string)cmd << "\n";
   // Check end of client msgs
   if (cmd.opcode() == Command::DISCONNECT) {
     table.erase(client->sockfd());

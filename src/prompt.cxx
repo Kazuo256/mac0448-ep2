@@ -75,8 +75,6 @@ void Prompt::init () {
 }
 
 bool Prompt::send_command (Connection *server) {
-  string packet, response;
-  char cmdline[MAXLINE+1];
   string line;
   string cmd, arg, data;
   getline(cin, line);
@@ -85,11 +83,10 @@ bool Prompt::send_command (Connection *server) {
   tokens >> cmd >> arg >> data;
   /* Escreve a linha lida no socket */
   server->send(check_cmd(cmd, arg, data));
-  response = server->receive();
-  Command resp_cmd = Command::from_packet(response);
-  if (resp_cmd.opcode() == Command::GIVE_ID)
-    cout << "Recebeu ID " << resp_cmd.arg(0) << "\n";
-  cout << (string)resp_cmd << "\n";
+  Command response = server->receive();
+  if (response.opcode() == Command::GIVE_ID)
+    cout << "Recebeu ID " << response.arg(0) << "\n";
+  cout << (string)response << "\n";
   return true;
 }
 
