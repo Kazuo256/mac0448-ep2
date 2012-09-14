@@ -9,12 +9,12 @@ struct pollfd;
 
 namespace ep2 {
 
-class InputListener {
+class EventListener {
 
   public:
 
-    InputListener () {}
-    ~InputListener () {}
+    EventListener () {}
+    ~EventListener () {}
 
     void add_input (int fd);
     void remove_input (int fd);

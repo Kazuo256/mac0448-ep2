@@ -1,5 +1,5 @@
 
-#include "inputlistener.h"
+#include "eventlistener.h"
 
 #include <cstdlib>
 #include <poll.h>
@@ -11,15 +11,15 @@ namespace ep2 {
 using std::vector;
 using std::list;
 
-void InputListener::add_input (int fd) {
+void EventListener::add_input (int fd) {
   fds_.push_back(fd);
 }
 
-void InputListener::remove_input (int fd) {
+void EventListener::remove_input (int fd) {
   fds_.remove(fd);
 }
 
-void InputListener::poll (vector<int>& ready) {
+void EventListener::poll (vector<int>& ready) {
   size_t pos = 0, size = fds_.size();
   struct pollfd *fds = new struct pollfd[size];
   for (list<int>::iterator it = fds_.begin(); it != fds_.end(); ++it, ++pos) {

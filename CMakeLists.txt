@@ -12,8 +12,8 @@ set (
   src/TCPconnection.h
   src/connection.h
   src/commandhandler.h
-  src/inputlistener.cxx
-  src/inputlistener.h
+  src/eventlistener.cxx
+  src/eventlistener.h
 )
 
 set (

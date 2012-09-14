@@ -6,7 +6,7 @@
 
 #include "connection.h"
 #include "TCPconnection.h"
-#include "inputlistener.h"
+#include "eventlistener.h"
 #include "command.h"
 #include "serverhandler.h"
 
@@ -17,7 +17,7 @@ using std::cin;
 
 using ep2::Connection;
 using ep2::TCPConnection;
-using ep2::InputListener;
+using ep2::EventListener;
 using ep2::Command;
 using ep2::ServerHandler;
 
@@ -43,7 +43,7 @@ int main (int argc, char **argv) {
   server.host(atoi(argv[1]));
 
   client_table table;
-  InputListener listener;
+  EventListener listener;
   listener.add_input(STDIN_FILENO);
   listener.add_input(server.sockfd());
   while (true) {
