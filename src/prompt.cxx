@@ -61,14 +61,14 @@ static string handle_refuse (const string& arg, const string& data) {
 }
 
 void Prompt::init () {
-  cmd_map["/disconnect"] = handle_disconnect;
-  cmd_map["/nick"] = handle_nick;
-  cmd_map["/msg"] = handle_msg;
-  cmd_map["/send"] = handle_send;
-  cmd_map["/list"] = handle_list;
-  cmd_map["/exit"] = handle_exit;
-  cmd_map["/accept"] = handle_accept;
-  cmd_map["/refuse"] = handle_refuse;
+  cmd_map_["/disconnect"] = handle_disconnect;
+  cmd_map_["/nick"] = handle_nick;
+  cmd_map_["/msg"] = handle_msg;
+  cmd_map_["/send"] = handle_send;
+  cmd_map_["/list"] = handle_list;
+  cmd_map_["/exit"] = handle_exit;
+  cmd_map_["/accept"] = handle_accept;
+  cmd_map_["/refuse"] = handle_refuse;
 }
 
 static void send_disconnect (int sockfd) {
@@ -102,13 +102,13 @@ void Prompt::run () {
     }
     
   }
-  send_disconnect(sockfd_);
+  //send_disconnect(sockfd_);
 }
 
 string Prompt::check_cmd (const string& cmd, const string& arg,
                         const string& data) {
-  CommandMap::iterator it = cmd_map.find(cmd);
-  if (it == cmd_map.end()) return "oi\n";
+  CommandMap::iterator it = cmd_map_.find(cmd);
+  if (it == cmd_map_.end()) return "oi\n";
   return it->second(arg, data);
 }
 
