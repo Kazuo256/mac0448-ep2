@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <tr1/functional>
 
 #include "connection.h"
 #include "TCPconnection.h"
@@ -23,6 +24,10 @@ using ep2::ServerHandler;
 
 typedef map<int, Connection*> client_table;
 
+static TCPConnection server;
+static client_table table;
+static EventListener listener;
+
 static Connection* get_client (const client_table& table, int fd) {
   client_table::const_iterator seek = table.find(fd);
   return (seek != table.end()) ? seek->second : NULL;
@@ -34,62 +39,105 @@ static void clear_clients (client_table& table) {
   table.clear();
 }
 
+// EVENTS
+
+static EventListener::Status prompt_event () {
+  string garbage;
+  cin >> garbage;
+  return cin.eof() ? EventListener::EXIT : EventListener::CONTINUE;
+}
+
+static EventListener::Status command_event (Connection* client) {
+  puts("PACKET");
+  string packet = client->receive();
+  // Check end of client msgs
+  if (!packet.size()) {
+    table.erase(client->sockfd());
+    delete client;
+    return EventListener::STOP;
+  }
+  /* Lê a linha enviada pelo cliente e escreve na saída padrão */
+  Command cmd = Command::from_packet(packet);
+  ServerHandler().handle(cmd);
+  if ((fputs(packet.c_str(),stdout)) == EOF) {
+     perror("fputs error");
+     exit (1);
+  }
+  /* Agora re-envia a linha para o cliente */
+  client->send(packet);
+  return EventListener::CONTINUE;
+}
+
+static EventListener::Status accept_event () {
+  Connection *client = server.accept();
+  table[client->sockfd()] = client;
+  listener.add_input(client->sockfd(), std::tr1::bind(command_event, client));
+  puts("CONNECTION");
+  return EventListener::CONTINUE;
+}
+
+static EventListener::Status dummy () {
+  puts("DUMMY");
+  return EventListener::CONTINUE;
+}
+
+// MAIN
+
 int main (int argc, char **argv) {
 	if (argc != 2) {
       fprintf(stderr,"Uso: %s <Porta>\n",argv[0]);
 		exit(1);
 	}
-  TCPConnection server;
   server.host(atoi(argv[1]));
 
-  client_table table;
-  EventListener listener;
-  listener.add_input(STDIN_FILENO);
-  listener.add_input(server.sockfd());
-  while (true) {
-    vector<int> fds;
-    // query events
-    listener.poll(fds);
-    // loop through events
-    for (vector<int>::iterator it = fds.begin(); it != fds.end(); ++it) {
-      Connection *client;
-      // If it is this server's socket, an incoming TCP connection arrived
-      if (*it == server.sockfd()) {
-        client = server.accept();
-        table[client->sockfd()] = client;
-        listener.add_input(client->sockfd());
-      }
-      // If if is one of the client's sockets, handle the command.
-      else if ((client = get_client(table, *it)) != NULL) {
-        string packet = client->receive();
-        // Check end of client msgs
-        if (!packet.size()) {
-          table.erase(*it);
-          delete client;
-        }
-        else {
-          /* Lê a linha enviada pelo cliente e escreve na saída padrão */
-          Command cmd = Command::from_packet(packet);
-          ServerHandler().handle(cmd);
-          if ((fputs(packet.c_str(),stdout)) == EOF) {
-             perror("fputs error");
-             exit (1);
-          }
-          /* Agora re-envia a linha para o cliente */
-          client->send(packet);
-        }
-      }
-      // Caso seja o final do input, desliga o servidor.
-      else if (*it == STDIN_FILENO) {
-        string garbage;
-        cin >> garbage;
-        if (cin.eof()) {
-          clear_clients(table);
-          return 0;
-        }
-      }
-    }
-	}
+  listener.add_input(STDIN_FILENO, EventListener::Callback(prompt_event));
+  listener.add_input(server.sockfd(), EventListener::Callback(accept_event));
+  listener.listen();
+  //while (true) {
+  //  vector<int> fds;
+  //  // query events
+  //  listener.poll(fds);
+  //  // loop through events
+  //  for (vector<int>::iterator it = fds.begin(); it != fds.end(); ++it) {
+  //    Connection *client;
+  //    // If it is this server's socket, an incoming TCP connection arrived
+  //    if (*it == server.sockfd()) {
+  //      client = server.accept();
+  //      table[client->sockfd()] = client;
+  //      listener.add_input(client->sockfd(), EventListener::Callback(dummy));
+  //    }
+  //    // If if is one of the client's sockets, handle the command.
+  //    else if ((client = get_client(table, *it)) != NULL) {
+  //      string packet = client->receive();
+  //      // Check end of client msgs
+  //      if (!packet.size()) {
+  //        table.erase(*it);
+  //        delete client;
+  //      }
+  //      else {
+  //        /* Lê a linha enviada pelo cliente e escreve na saída padrão */
+  //        Command cmd = Command::from_packet(packet);
+  //        ServerHandler().handle(cmd);
+  //        if ((fputs(packet.c_str(),stdout)) == EOF) {
+  //           perror("fputs error");
+  //           exit (1);
+  //        }
+  //        /* Agora re-envia a linha para o cliente */
+  //        client->send(packet);
+  //      }
+  //    }
+  //    // Caso seja o final do input, desliga o servidor.
+  //    else if (*it == STDIN_FILENO) {
+  //      string garbage;
+  //      cin >> garbage;
+  //      if (cin.eof()) {
+  //        clear_clients(table);
+  //        return 0;
+  //      }
+  //    }
+  //  }
+	//}
+  clear_clients(table);
 	return 0;
 }
 
