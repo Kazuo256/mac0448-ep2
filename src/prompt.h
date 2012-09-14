@@ -20,7 +20,6 @@ class Prompt {
     typedef Command (*cmd_handler) (const std::string& arg,
                                     const std::string& data);
     typedef std::map<std::string, cmd_handler> CommandMap;
-    int         sockfd_;
     CommandMap  cmd_map_;
     Command check_cmd (const std::string& cmd, const std::string& arg,
                        const std::string& data);
