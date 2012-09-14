@@ -26,6 +26,12 @@ static Connection* get_client (const client_table& table, int fd) {
   return (seek != table.end()) ? seek->second : NULL;
 }
 
+static void clear_clients (client_table& table) {
+  for (client_table::iterator it = table.begin(); it != table.end(); ++it)
+    delete it->second;
+  table.clear();
+}
+
 int main (int argc, char **argv) {
 	if (argc != 2) {
       fprintf(stderr,"Uso: %s <Porta>\n",argv[0]);
@@ -37,6 +43,7 @@ int main (int argc, char **argv) {
 
   client_table table;
   InputListener listener;
+  listener.add_input(STDIN_FILENO);
   listener.add_input(server.sockfd());
   while (true) {
     vector<int> fds;
@@ -67,35 +74,11 @@ int main (int argc, char **argv) {
           client->send(packet);
         }
       }
+      else if (*it == STDIN_FILENO) {
+        clear_clients(table);
+        return 0;
+      }
     }
-    //pid_t childpid;
-    //if ( (childpid = fork()) == 0) { /* Se for zero está no processo filho */
-    //  string packet;
-    //  /* Processa tudo que for enviado do cliente conectado */
-    //  while ((packet = client->receive()).size()) {
-    //     /* Lê a linha enviada pelo cliente e escreve na saída padrão */
-    //     Command cmd = Command::from_packet(packet);
-    //     ServerHandler().handle(cmd);
-    //     if ((fputs(packet.c_str(),stdout)) == EOF) {
-    //        perror("fputs error");
-    //        exit (1);
-    //     }
-    //     /* Agora re-envia a linha para o cliente */
-    //     client->send(packet);
-    //  }
-    //  delete client;
-    //  return 0;
-    //  /******************************************************/
-    //  //printf(
-    //  //   "Dados do socket remoto: (IP: %s, PORTA: %d desconectou)\n",
-    //  //   inet_ntop(AF_INET, &(dadosRemoto.sin_addr).s_addr, enderecoRemoto,
-    //  //             sizeof(enderecoRemoto)),
-    //  //   ntohs(dadosRemoto.sin_port)
-    //  // );
-    //  //exit (0);         /* Termina o processo filho */
-    //}
-    ///* Se for o pai continua a execução aqui... */
-    //delete client;
 	}
 	return 0;
 }

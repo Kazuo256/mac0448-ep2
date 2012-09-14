@@ -118,51 +118,6 @@ Connection* TCPConnection::accept () {
   accepted->remote_info_ = remote_info;
   accepted->remote_addr_ = enderecoRemoto;
   return accepted;
-	//for ( ; ; ) {
-  //  // Com isso não precisa usar o getpeername. Antes no lugar dos dados do
-  //  // remote_info_, tinha NULL
-	//	if ((connfd = ::accept(sockfd(), (struct sockaddr*) &remote_info_,
-  //                       (socklen_t *) &remote_info_size)) == -1 ) {
-	//		perror("accept");
-	//		exit(1);
-  //	}
-  //  /* Imprimindo os dados do socket remoto */
-  //  printf("Dados do socket remoto: (IP: %s, PORTA: %d conectou)\n",
-  //         inet_ntop(
-  //           AF_INET,
-  //           &(remote_info_.sin_addr).s_addr,enderecoRemoto,
-  //           sizeof(enderecoRemoto)
-  //          ),
-  //         ntohs(remote_info_.sin_port));
-  //  if ( (childpid = fork()) == 0) { /* Se for zero está no processo filho */
-  //     close(sockfd());  /* Fecha o socket que está escutando (só precisa de 1) */
-  //     
-  //     /* Processa tudo que for enviado do cliente conectado */
-  //     while ((n=read(connfd, recvline, MAXLINE)) > 0) {
-  //        /* Lê a linha enviada pelo cliente e escreve na saída padrão */
-  //        recvline[n]=0;
-  //        Command cmd = Command::from_packet(recvline);
-  //        ServerHandler().handle(cmd);
-  //        if ((fputs(recvline,stdout)) == EOF) {
-  //           perror("fputs error");
-  //           exit (1);
-  //        }
-  //        /* Agora re-envia a linha para o cliente */
-  //        write(connfd, recvline, strlen(recvline));
-  //     }
-  //     /******************************************************/
-  //     printf(
-  //        "Dados do socket remoto: (IP: %s, PORTA: %d desconectou)\n",
-  //        inet_ntop(AF_INET, &(remote_info_.sin_addr).s_addr, enderecoRemoto,
-  //                  sizeof(enderecoRemoto)),
-  //        ntohs(remote_info_.sin_port)
-  //      );
-  //    close(connfd);
-  //     exit (0);         /* Termina o processo filho */
-  //  }
-  //  /* Se for o pai continua a execução aqui... */
-  //  close(connfd);
-	//}
 }
 
 bool TCPConnection::connect (const string& hostname, unsigned short port) {
