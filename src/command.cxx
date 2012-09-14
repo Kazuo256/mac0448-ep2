@@ -20,8 +20,10 @@ string Command::make_packet () const {
 
 Command::operator string () const {
   switch(opcode_) {
+    case REQUEST_ID:
+      return string("ID requested.");
     case NICK:
-      return (string("Nick requested: ")+data_[0]);
+      return string("Nick requested: ")+data_[0];
     default:
       return "Unknown command";
   }
@@ -29,7 +31,8 @@ Command::operator string () const {
 
 Command Command::from_packet (const string& packet) {
   Command cmd(packet[0]);
-  if (packet[0] != NICK) return Command(255);
+  if (packet[0] != NICK && packet[0] != REQUEST_ID &&
+      packet[0] != GIVE_ID) return Command(255);
   for (size_t pos = 2, count = 0;
        count < static_cast<size_t>(packet[1]) && pos < packet.size();
        pos += packet[pos]+1, ++count)
@@ -48,6 +51,10 @@ Command Command::nick (const string& name) {
 
 Command Command::disconnect () {
   return Command(DISCONNECT, arg_list());
+}
+
+Command Command::give_id (const string& id) {
+  return Command(GIVE_ID, arg_list(1, id));
 }
 
 } // namespace ep2

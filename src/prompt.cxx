@@ -34,7 +34,8 @@ static string handle_nick (const string& arg, const string& data) {
 
 static string handle_msg (const string& arg, const string& data) {
   puts((string("Falando com o brother '")+arg+"' msg '"+data+"'").c_str());
-  return "msg\n";
+  //return "msg\n";
+  return Command::request_id().make_packet();
 }
 
 static string handle_send (const string& arg, const string& data) {
@@ -86,6 +87,9 @@ bool Prompt::send_command (Connection *server) {
   /* Escreve a linha lida no socket */
   server->send(packet);
   response = server->receive();
+  Command resp_cmd = Command::from_packet(response);
+  if (resp_cmd.opcode() == Command::GIVE_ID)
+    cout << "Recebeu ID " << resp_cmd.arg(0) << "\n";
   if ((fputs(response.c_str(),stdout)) == EOF) {
     perror("fputs error");
     exit (1);
