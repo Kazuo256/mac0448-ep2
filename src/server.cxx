@@ -2,6 +2,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <iostream>
 
 #include "connection.h"
 #include "TCPconnection.h"
@@ -12,6 +13,7 @@
 using std::vector;
 using std::map;
 using std::string;
+using std::cin;
 
 using ep2::Connection;
 using ep2::TCPConnection;
@@ -39,7 +41,6 @@ int main (int argc, char **argv) {
 	}
   TCPConnection server;
   server.host(atoi(argv[1]));
-  //server.accept();
 
   client_table table;
   InputListener listener;
@@ -47,14 +48,18 @@ int main (int argc, char **argv) {
   listener.add_input(server.sockfd());
   while (true) {
     vector<int> fds;
+    // query events
     listener.poll(fds);
+    // loop through events
     for (vector<int>::iterator it = fds.begin(); it != fds.end(); ++it) {
       Connection *client;
+      // If it is this server's socket, an incoming TCP connection arrived
       if (*it == server.sockfd()) {
         client = server.accept();
         table[client->sockfd()] = client;
         listener.add_input(client->sockfd());
       }
+      // If if is one of the client's sockets, handle the command.
       else if ((client = get_client(table, *it)) != NULL) {
         string packet = client->receive();
         // Check end of client msgs
@@ -74,9 +79,14 @@ int main (int argc, char **argv) {
           client->send(packet);
         }
       }
+      // Caso seja o final do input, desliga o servidor.
       else if (*it == STDIN_FILENO) {
-        clear_clients(table);
-        return 0;
+        string garbage;
+        cin >> garbage;
+        if (cin.eof()) {
+          clear_clients(table);
+          return 0;
+        }
       }
     }
 	}
