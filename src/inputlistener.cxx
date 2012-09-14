@@ -27,7 +27,7 @@ void InputListener::poll (vector<int>& ready) {
     fds[pos].events = POLLIN;
     fds[pos].revents = 0;
   }
-  int n = ::poll(fds, fds_.size(), -1);
+  ::poll(fds, fds_.size(), -1);
   for (pos = 0; pos < size; ++pos)
     if (fds[pos].revents & POLLIN)
       ready.push_back(fds[pos].fd);

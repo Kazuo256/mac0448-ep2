@@ -1,7 +1,6 @@
 
 #include "TCPconnection.h"
 
-#define _GNU_SOURCE
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -84,15 +83,6 @@ void TCPConnection::host (unsigned short port) {
 	}
 }
 
-static void wait_input (int fd) {
-  struct pollfd poll_list;
-  poll_list.fd = fd;
-  poll_list.events = POLLIN;
-  poll_list.revents = 0;
-  int n = poll(&poll_list, 1, -1);
-  printf("poll returned: %d\n", n);
-}
-
 Connection* TCPConnection::accept () {
 	int                 connfd;
   struct sockaddr_in  remote_info;
@@ -121,9 +111,6 @@ Connection* TCPConnection::accept () {
 }
 
 bool TCPConnection::connect (const string& hostname, unsigned short port) {
-	int	    n;
-	char	  recvline[MAXLINE + 1];
-  struct  sockaddr_in local_info_;
   int     dadosLocalLen;
   char    enderecoLocal[MAXLINE + 1];
 

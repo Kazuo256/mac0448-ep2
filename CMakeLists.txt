@@ -37,6 +37,6 @@ add_executable (ep2-server ${EP2_SERVER_SRC} ${EP2_COMMON_SRC})
 set_target_properties (
   ep2-client ep2-server
   PROPERTIES COMPILE_FLAGS
-  "-ansi -Wall -g -O0"
+  "-D_GNU_SOURCE -ansi -Wall -g -O0"
 )
 
