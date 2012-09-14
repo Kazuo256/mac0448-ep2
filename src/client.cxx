@@ -8,124 +8,44 @@
  * Bugs? Tente consertar primeiro! Depois me envie email :) batista@ime.usp.br
  */
 
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <netdb.h>
-#include <string.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
+//#include <sys/socket.h>
+//#include <sys/types.h>
+//#include <arpa/inet.h>
+//#include <netinet/in.h>
+//#include <stdio.h>
+//#include <netdb.h>
+//#include <string.h>
+//#include <errno.h>
+//#include <string.h>
+//#include <stdlib.h>
+//#include <unistd.h>
 
 /* Para resolver os nomes com a função gethostbyname */
-#include <netdb.h>
+//#include <netdb.h>
+
+#include <cstdlib>
+#include <cstdio>
 
 #include "prompt.h"
+#include "TCPconnection.h"
 
 #define MAXLINE 4096
 
 using ep2::Prompt;
+using ep2::TCPConnection;
 
 int main(int argc, char **argv) {
-	int	    sockfd, n;
-	char	  recvline[MAXLINE + 1];
-	struct  sockaddr_in servaddr;
-  struct  sockaddr_in dadosLocal;
-  int     dadosLocalLen;
-  char    enderecoLocal[MAXLINE + 1];
-
-  /* Para uso com o gethostbyname */
-  struct  hostent *hptr;
-  char    enderecoIPServidor[INET_ADDRSTRLEN];
 
 	if (argc != 3) {
       fprintf(stderr,"Uso: %s <Endereco IP|Nome> <Porta>\n",argv[0]);
 		exit(1);
 	}
 
-  /* Resolvendo o nome passado na linha de comando.
-  * Sobre o funcionamento: o gethostbyname faz uma busca pelo nome
-  * acessando os registros locais do SO (/etc/hosts por exemplo) e
-  * depois o servidor DNS. No caso do DNS ele faz uma busca por
-  * registros do tipo "A". Ao encontrar ele retorna as informações
-  * em uma struct hostent que tem este formato:
-  *
-  * struct hostent {
-  *     char  *h_name;        -- official (canonical) name of host 
-  *     char **h_aliases;     -- pointer to array of pointers to alias names
-  *     int    h_addrtype;    -- host address type: AF_INET 
-  *     int    h_length;      -- length of address: 4 
-  *     char **h_addr_list;   -- ptr to array of ptrs with IPv4 addrs 
-  * };
-  *
-  * Em caso de erro (retorno NULL da função), o inteiro h_errno é modificado com os valores:
-  *
-  * HOST_NOT_FOUND
-  * TRY_AGAIN
-  * NO_RECOVERY
-  * NO_DATA
-  * s
-  * A função hstrerror pode ser usada para interpretar o conteúdo do
-  * h_errno.
-  */
-  if ( (hptr = gethostbyname(argv[1])) == NULL) {
-    fprintf(stderr,"gethostbyname :(\n");
-    exit(1);
-  }
-  /* Verificando se de fato o endereço é AF_INET */
-  if (hptr->h_addrtype != AF_INET) {
-    fprintf(stderr,"h_addrtype :(\n");
-    exit(1);
-  }
-  /* Salvando o IP do servidor (Vai pegar sempre o primeiro IP
-  * retornado pelo DNS para o nome passado no shell)*/
-  if ( (inet_ntop(AF_INET, hptr->h_addr_list[0], enderecoIPServidor, sizeof(enderecoIPServidor))) == NULL) {
-    fprintf(stderr,"inet_ntop :(\n");
-    exit (1);
-  }
-
-  /* A partir deste ponto o endereço IP do servidor estará na string
-  * enderecoIPServidor */
-  printf("[Conectando no servidor no IP %s]\n",enderecoIPServidor);
-  printf("[o comando 'exit' encerra a conexão]\n");
-
-	if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("socket error");
-		exit(1);
-	}
-
-	bzero(&servaddr, sizeof(servaddr));
-  dadosLocalLen=sizeof(dadosLocal);
-  bzero(&dadosLocal, dadosLocalLen);
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_port   = htons(atoi(argv[2]));
-
-  /* O endereço IP passado para a função é o que foi retornado na gethostbyname */
-	if (inet_pton(AF_INET, enderecoIPServidor, &servaddr.sin_addr) <= 0) {
-		perror("inet_pton error");
-		exit(1);
-	}
-
-	if (connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
-		perror("connect error");
-		exit(1);
-	}
-   
-  /* Imprimindo os dados do socket local */
-  if (getsockname(sockfd, (struct sockaddr *) &dadosLocal, (socklen_t *) &dadosLocalLen)) {
-  	perror("getsockname error");
-  	exit(1);
-  }
-  printf("Dados do socket local: (IP: %s, PORTA: %d)\n",inet_ntop(AF_INET, &(dadosLocal.sin_addr).s_addr,enderecoLocal,sizeof(enderecoLocal)), ntohs(dadosLocal.sin_port));
-  /***************************************/
-   
-  Prompt prompt(sockfd);
+  TCPConnection client;
+  client.connect(argv[1], atoi(argv[2]));
+  Prompt prompt(client.sockfd());
   prompt.init();
   prompt.run();
-  close(sockfd);
    
   return 0;
 }

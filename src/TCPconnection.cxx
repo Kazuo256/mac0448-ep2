@@ -121,7 +121,96 @@ Connection* TCPConnection::accept () {
 }
 
 bool TCPConnection::connect (const string& hostname, unsigned short port) {
-  return false;
+	int	    n;
+	char	  recvline[MAXLINE + 1];
+  struct  sockaddr_in local_info_;
+  int     dadosLocalLen;
+  char    enderecoLocal[MAXLINE + 1];
+
+  /* Para uso com o gethostbyname */
+  struct  hostent *hptr;
+  char    enderecoIPServidor[INET_ADDRSTRLEN];
+  /* Resolvendo o nome passado na linha de comando.
+  * Sobre o funcionamento: o gethostbyname faz uma busca pelo nome
+  * acessando os registros locais do SO (/etc/hosts por exemplo) e
+  * depois o servidor DNS. No caso do DNS ele faz uma busca por
+  * registros do tipo "A". Ao encontrar ele retorna as informações
+  * em uma struct hostent que tem este formato:
+  *
+  * struct hostent {
+  *     char  *h_name;        -- official (canonical) name of host 
+  *     char **h_aliases;     -- pointer to array of pointers to alias names
+  *     int    h_addrtype;    -- host address type: AF_INET 
+  *     int    h_length;      -- length of address: 4 
+  *     char **h_addr_list;   -- ptr to array of ptrs with IPv4 addrs 
+  * };
+  *
+  * Em caso de erro (retorno NULL da função), o inteiro h_errno é modificado com
+  * os valores:
+  *
+  * HOST_NOT_FOUND
+  * TRY_AGAIN
+  * NO_RECOVERY
+  * NO_DATA
+  * s
+  * A função hstrerror pode ser usada para interpretar o conteúdo do
+  * h_errno.
+  */
+  if ( (hptr = gethostbyname(hostname.c_str())) == NULL) {
+    fprintf(stderr,"gethostbyname :(\n");
+    exit(1);
+  }
+  /* Verificando se de fato o endereço é AF_INET */
+  if (hptr->h_addrtype != AF_INET) {
+    fprintf(stderr,"h_addrtype :(\n");
+    exit(1);
+  }
+  /* Salvando o IP do servidor (Vai pegar sempre o primeiro IP
+  * retornado pelo DNS para o nome passado no shell)*/
+  if (inet_ntop(AF_INET, hptr->h_addr_list[0], enderecoIPServidor,
+                sizeof(enderecoIPServidor)) == NULL) {
+    fprintf(stderr,"inet_ntop :(\n");
+    exit (1);
+  }
+
+  /* A partir deste ponto o endereço IP do servidor estará na string
+  * enderecoIPServidor */
+  printf("[Conectando no servidor no IP %s]\n",enderecoIPServidor);
+  printf("[o comando 'exit' encerra a conexão]\n");
+
+	bzero(&remote_info_, sizeof(remote_info_));
+  dadosLocalLen=sizeof(local_info_);
+  bzero(&local_info_, dadosLocalLen);
+	remote_info_.sin_family = AF_INET;
+	remote_info_.sin_port   = htons(port);
+
+  /* O endereço IP passado para a função é o que foi retornado na gethostbyname */
+	if (inet_pton(AF_INET, enderecoIPServidor, &remote_info_.sin_addr) <= 0) {
+		perror("inet_pton error");
+		exit(1);
+	}
+
+	if (::connect(sockfd(), (struct sockaddr *) &remote_info_,
+              sizeof(remote_info_)) < 0) {
+		perror("connect error");
+		exit(1);
+	}
+   
+  /* Imprimindo os dados do socket local */
+  if (getsockname(sockfd(), (struct sockaddr*)&local_info_,
+                  (socklen_t*)&dadosLocalLen)) {
+  	perror("getsockname error");
+  	exit(1);
+  }
+
+  printf(
+    "Dados do socket local: (IP: %s, PORTA: %d)\n",
+    inet_ntop(AF_INET, &(local_info_.sin_addr).s_addr,enderecoLocal,
+              sizeof(enderecoLocal)),
+    ntohs(local_info_.sin_port)
+  );
+  /***************************************/
+  return true;
 }
 
 std::string TCPConnection::receive () {
