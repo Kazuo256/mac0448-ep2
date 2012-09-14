@@ -102,6 +102,7 @@ void Prompt::run () {
     }
     
   }
+  send_disconnect(sockfd_);
 }
 
 string Prompt::check_cmd (const string& cmd, const string& arg,

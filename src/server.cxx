@@ -50,15 +50,21 @@ int main (int argc, char **argv) {
       }
       else if ((client = get_client(table, *it)) != NULL) {
         string packet = client->receive();
-        /* Lê a linha enviada pelo cliente e escreve na saída padrão */
-        Command cmd = Command::from_packet(packet);
-        ServerHandler().handle(cmd);
-        if ((fputs(packet.c_str(),stdout)) == EOF) {
-           perror("fputs error");
-           exit (1);
+        if (!packet.size()) {
+          table.erase(*it);
+          delete client;
         }
-        /* Agora re-envia a linha para o cliente */
-        client->send(packet);
+        else {
+          /* Lê a linha enviada pelo cliente e escreve na saída padrão */
+          Command cmd = Command::from_packet(packet);
+          ServerHandler().handle(cmd);
+          if ((fputs(packet.c_str(),stdout)) == EOF) {
+             perror("fputs error");
+             exit (1);
+          }
+          /* Agora re-envia a linha para o cliente */
+          client->send(packet);
+        }
       }
     }
     //pid_t childpid;

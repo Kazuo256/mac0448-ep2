@@ -48,18 +48,33 @@ using std::string;
  */
 
 TCPConnection::TCPConnection () :
-  Connection(socket(AF_INET, SOCK_STREAM, 0)) {}
+  Connection(socket(AF_INET, SOCK_STREAM, 0)) {
+  bzero(&local_info_, sizeof(local_info_));
+  bzero(&remote_info_, sizeof(remote_info_));  
+}
 
 TCPConnection::TCPConnection (int sockfd) :
-  Connection(sockfd) {}
+  Connection(sockfd) {
+  bzero(&local_info_, sizeof(local_info_));
+  bzero(&remote_info_, sizeof(remote_info_));
+}
+
+TCPConnection::~TCPConnection () {
+  if (remote_addr_.size()) {
+    printf(
+       "Dados do socket remoto: (IP: %s, PORTA: %d desconectou)\n",
+       remote_addr_.c_str(),
+       ntohs(remote_info_.sin_port)
+     );
+  }
+}
 
 void TCPConnection::host (unsigned short port) {
-	struct sockaddr_in servaddr;
-	bzero(&servaddr, sizeof(servaddr));
-	servaddr.sin_family      = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port        = htons(port);
-	if (bind(sockfd(), (struct sockaddr*)&servaddr, sizeof(servaddr)) == -1) {
+	local_info_.sin_family      = AF_INET;
+	local_info_.sin_addr.s_addr = htonl(INADDR_ANY);
+	local_info_.sin_port        = htons(port);
+	if (bind(sockfd(),
+           (struct sockaddr*)&local_info_, sizeof(local_info_)) == -1) {
 		perror("bind");
 		exit(1);
 	}
@@ -80,16 +95,14 @@ static void wait_input (int fd) {
 
 Connection* TCPConnection::accept () {
 	int    connfd;
-	struct sockaddr_in dadosRemoto;
-	int    dadosRemotoLen;
+	int    remote_info_size;
 	char   enderecoRemoto[MAXDATASIZE + 1];
 	ssize_t  n;
 	pid_t  childpid;
 	char	recvline[MAXLINE + 1];
-	dadosRemotoLen = sizeof(dadosRemoto);
-	bzero(&dadosRemoto, dadosRemotoLen);
-	if ((connfd = ::accept(sockfd(), (struct sockaddr*) &dadosRemoto,
-                       (socklen_t *) &dadosRemotoLen)) == -1 ) {
+	remote_info_size = sizeof(remote_info_);
+	if ((connfd = ::accept(sockfd(), (struct sockaddr*) &remote_info_,
+                       (socklen_t *) &remote_info_size)) == -1 ) {
 		perror("accept");
 		exit(1);
   }
@@ -97,16 +110,18 @@ Connection* TCPConnection::accept () {
   printf("Dados do socket remoto: (IP: %s, PORTA: %d conectou)\n",
          inet_ntop(
            AF_INET,
-           &(dadosRemoto.sin_addr).s_addr,enderecoRemoto,
+           &(remote_info_.sin_addr).s_addr,
+           enderecoRemoto,
            sizeof(enderecoRemoto)
           ),
-         ntohs(dadosRemoto.sin_port));
+         ntohs(remote_info_.sin_port));
+  remote_addr_ = enderecoRemoto;
   return new TCPConnection(connfd);
 	//for ( ; ; ) {
   //  // Com isso não precisa usar o getpeername. Antes no lugar dos dados do
-  //  // dadosRemoto, tinha NULL
-	//	if ((connfd = ::accept(sockfd(), (struct sockaddr*) &dadosRemoto,
-  //                       (socklen_t *) &dadosRemotoLen)) == -1 ) {
+  //  // remote_info_, tinha NULL
+	//	if ((connfd = ::accept(sockfd(), (struct sockaddr*) &remote_info_,
+  //                       (socklen_t *) &remote_info_size)) == -1 ) {
 	//		perror("accept");
 	//		exit(1);
   //	}
@@ -114,10 +129,10 @@ Connection* TCPConnection::accept () {
   //  printf("Dados do socket remoto: (IP: %s, PORTA: %d conectou)\n",
   //         inet_ntop(
   //           AF_INET,
-  //           &(dadosRemoto.sin_addr).s_addr,enderecoRemoto,
+  //           &(remote_info_.sin_addr).s_addr,enderecoRemoto,
   //           sizeof(enderecoRemoto)
   //          ),
-  //         ntohs(dadosRemoto.sin_port));
+  //         ntohs(remote_info_.sin_port));
   //  if ( (childpid = fork()) == 0) { /* Se for zero está no processo filho */
   //     close(sockfd());  /* Fecha o socket que está escutando (só precisa de 1) */
   //     
@@ -137,9 +152,9 @@ Connection* TCPConnection::accept () {
   //     /******************************************************/
   //     printf(
   //        "Dados do socket remoto: (IP: %s, PORTA: %d desconectou)\n",
-  //        inet_ntop(AF_INET, &(dadosRemoto.sin_addr).s_addr, enderecoRemoto,
+  //        inet_ntop(AF_INET, &(remote_info_.sin_addr).s_addr, enderecoRemoto,
   //                  sizeof(enderecoRemoto)),
-  //        ntohs(dadosRemoto.sin_port)
+  //        ntohs(remote_info_.sin_port)
   //      );
   //    close(connfd);
   //     exit (0);         /* Termina o processo filho */

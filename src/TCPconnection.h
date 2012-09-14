@@ -4,6 +4,8 @@
 
 #include "connection.h"
 
+#include <netinet/in.h>
+
 namespace ep2 {
 
 class TCPConnection : public Connection {
@@ -12,6 +14,7 @@ class TCPConnection : public Connection {
 
     TCPConnection ();
     TCPConnection (int sockfd);
+    ~TCPConnection ();
     
     void host (unsigned short port);
     Connection* accept ();
@@ -20,6 +23,13 @@ class TCPConnection : public Connection {
 
     std::string receive ();
     void send (const std::string& data);
+
+  private:
+
+    struct sockaddr_in  local_info_,
+                        remote_info_;
+    char                zero[32];
+    std::string         remote_addr_;
 
 };
 
