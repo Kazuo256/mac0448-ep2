@@ -31,8 +31,7 @@ Command::operator string () const {
 
 Command Command::from_packet (const string& packet) {
   Command cmd(packet[0]);
-  if (packet[0] != NICK && packet[0] != REQUEST_ID &&
-      packet[0] != GIVE_ID) return Command(255);
+  if (packet[0] >= MAX_COMMAND) return Command(255);
   for (size_t pos = 2, count = 0;
        count < static_cast<size_t>(packet[1]) && pos < packet.size();
        pos += packet[pos]+1, ++count)

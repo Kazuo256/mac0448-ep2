@@ -18,7 +18,8 @@ class Command {
                       NICK = 0x2,
                       DISCONNECT = 0x3,
                       MSG = 0x4,
-                      GIVE_ID = 0x11;
+                      GIVE_ID = 0x11,
+                      MAX_COMMAND = 0x12;
 
     byte opcode () const { return opcode_; }
     std::string arg (size_t idx) const { return data_[idx]; }
