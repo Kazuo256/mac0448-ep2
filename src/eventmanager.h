@@ -8,7 +8,7 @@
 
 namespace ep2 {
 
-class EventListener {
+class EventManager {
 
   public:
 
@@ -21,8 +21,8 @@ class EventListener {
 
     typedef std::tr1::function<Status (void)> Callback;
 
-    EventListener () {}
-    ~EventListener () { fds_.clear(); }
+    EventManager () {}
+    ~EventManager () { fds_.clear(); }
 
     void add_input (int fd, const Callback& callback);
     void remove_input (int fd);

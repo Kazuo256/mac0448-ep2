@@ -1,5 +1,5 @@
 
-#include "eventlistener.h"
+#include "eventmanager.h"
 
 #include <cstdlib>
 #include <cstdio>
@@ -11,15 +11,15 @@ namespace ep2 {
 
 using std::vector;
 
-void EventListener::add_input (int fd, const Callback& callback) {
+void EventManager::add_input (int fd, const Callback& callback) {
   fds_[fd] = callback;
 }
 
-void EventListener::remove_input (int fd) {
+void EventManager::remove_input (int fd) {
   fds_.erase(fd);
 }
 
-void EventListener::listen () {
+void EventManager::listen () {
   while (true) {
     vector<int> fds;
     // poll for new events
@@ -42,14 +42,14 @@ void EventListener::listen () {
   }
 }
 
-EventListener::Status EventListener::call_event (int fd) {
+EventManager::Status EventManager::call_event (int fd) {
   EventTable::const_iterator event = fds_.find(fd);
   if (event == fds_.end())
     return NOTFOUND;
   return event->second();
 }
 
-void EventListener::poll (vector<int>& ready) {
+void EventManager::poll (vector<int>& ready) {
   size_t pos = 0, size = fds_.size();
   struct pollfd *fds = new struct pollfd[size];
   for (EventTable::iterator it = fds_.begin(); it != fds_.end(); ++it, ++pos) {

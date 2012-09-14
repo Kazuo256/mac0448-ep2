@@ -7,7 +7,7 @@
 
 #include "connection.h"
 #include "TCPconnection.h"
-#include "eventlistener.h"
+#include "eventmanager.h"
 #include "command.h"
 #include "serverhandler.h"
 
@@ -18,7 +18,7 @@ using std::cin;
 
 using ep2::Connection;
 using ep2::TCPConnection;
-using ep2::EventListener;
+using ep2::EventManager;
 using ep2::Command;
 using ep2::ServerHandler;
 
@@ -26,7 +26,7 @@ typedef map<int, Connection*> ConnectionTable;
 
 static TCPConnection    server;
 static ConnectionTable  table;
-static EventListener    listener;
+static EventManager    listener;
 
 static void clear_clients (ConnectionTable& table) {
   for (ConnectionTable::iterator it = table.begin(); it != table.end(); ++it)
@@ -36,19 +36,19 @@ static void clear_clients (ConnectionTable& table) {
 
 // EVENTS
 
-static EventListener::Status prompt_event () {
+static EventManager::Status prompt_event () {
   string garbage;
   cin >> garbage;
-  return cin.eof() ? EventListener::EXIT : EventListener::CONTINUE;
+  return cin.eof() ? EventManager::EXIT : EventManager::CONTINUE;
 }
 
-static EventListener::Status command_event (Connection* client) {
+static EventManager::Status command_event (Connection* client) {
   string packet = client->receive();
   // Check end of client msgs
   if (!packet.size()) {
     table.erase(client->sockfd());
     delete client;
-    return EventListener::STOP;
+    return EventManager::STOP;
   }
   /* Lê a linha enviada pelo cliente e escreve na saída padrão */
   Command cmd = Command::from_packet(packet);
@@ -59,14 +59,14 @@ static EventListener::Status command_event (Connection* client) {
   }
   /* Agora re-envia a linha para o cliente */
   client->send(packet);
-  return EventListener::CONTINUE;
+  return EventManager::CONTINUE;
 }
 
-static EventListener::Status accept_event () {
+static EventManager::Status accept_event () {
   Connection *client = server.accept();
   table[client->sockfd()] = client;
   listener.add_input(client->sockfd(), std::tr1::bind(command_event, client));
-  return EventListener::CONTINUE;
+  return EventManager::CONTINUE;
 }
 
 // MAIN
@@ -77,8 +77,8 @@ int main (int argc, char **argv) {
 		exit(1);
 	}
   server.host(atoi(argv[1]));
-  listener.add_input(STDIN_FILENO, EventListener::Callback(prompt_event));
-  listener.add_input(server.sockfd(), EventListener::Callback(accept_event));
+  listener.add_input(STDIN_FILENO, EventManager::Callback(prompt_event));
+  listener.add_input(server.sockfd(), EventManager::Callback(accept_event));
   listener.listen();
   clear_clients(table);
 	return 0;
