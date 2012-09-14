@@ -90,10 +90,7 @@ bool Prompt::send_command (Connection *server) {
   Command resp_cmd = Command::from_packet(response);
   if (resp_cmd.opcode() == Command::GIVE_ID)
     cout << "Recebeu ID " << resp_cmd.arg(0) << "\n";
-  if ((fputs(response.c_str(),stdout)) == EOF) {
-    perror("fputs error");
-    exit (1);
-  }
+  cout << (string)resp_cmd << "\n";
   return true;
 }
 
