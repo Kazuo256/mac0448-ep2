@@ -21,8 +21,8 @@ class TCPConnection : public Connection {
 
     bool connect (const std::string& hostname, unsigned short port);
 
-    std::string receive ();
-    void send (const std::string& data);
+    Command receive ();
+    void send (const Command& cmd);
 
   private:
 

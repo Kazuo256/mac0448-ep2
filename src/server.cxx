@@ -14,6 +14,7 @@
 using std::vector;
 using std::string;
 using std::cin;
+using std::cout;
 using std::tr1::unordered_map;
 
 using ep2::Connection;
@@ -44,15 +45,16 @@ static EventManager::Status prompt_event () {
 }
 
 static EventManager::Status command_event (Connection* client) {
-  string packet = client->receive();
+  Command cmd = client->receive();
+  puts("HEY");
+  cout << (string)cmd << "\n";
   // Check end of client msgs
-  if (!packet.size()) {
+  if (cmd.opcode() == Command::DISCONNECT) {
     table.erase(client->sockfd());
     delete client;
     return EventManager::STOP;
   }
   /* Lê a linha enviada pelo cliente e escreve na saída padrão */
-  Command cmd = Command::from_packet(packet);
   ServerHandler().handle(client, cmd);
   return EventManager::CONTINUE;
 }

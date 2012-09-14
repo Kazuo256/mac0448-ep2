@@ -30,6 +30,8 @@ class Command {
 
     static Command from_packet (const std::string& packet);
 
+    static Command null_cmd () { return Command(0xff); }
+
     // Client commands
     static Command request_id ();
     static Command nick (const std::string& name); 

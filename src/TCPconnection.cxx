@@ -200,7 +200,7 @@ bool TCPConnection::connect (const string& hostname, unsigned short port) {
   return true;
 }
 
-std::string TCPConnection::receive () {
+Command TCPConnection::receive () {
   char cmdline[MAXLINE+1];
   int n=read(sockfd(), cmdline, MAXLINE);
 	if (n < 0) {
@@ -208,11 +208,13 @@ std::string TCPConnection::receive () {
 		exit(1);
 	}
   cmdline[n]=0;
-  return cmdline;
+  return Command::from_packet(cmdline);
 }
 
-void TCPConnection::send (const std::string& data) {
-  write(sockfd(), data.c_str(), data.size()); 
+void TCPConnection::send (const Command& cmd) {
+  string packet = cmd.make_packet();
+  size_t size = packet.size();
+  write(sockfd(), packet.c_str(), size); 
 }
 
 

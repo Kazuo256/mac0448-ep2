@@ -8,6 +8,8 @@
 
 namespace ep2 {
 
+class Command;
+
 class Connection {
 
   public:
@@ -27,8 +29,8 @@ class Connection {
     virtual bool connect (const std::string& hostname, unsigned short port) = 0;
 
     // Either side methods
-    virtual std::string receive () = 0;
-    virtual void send (const std::string& data) = 0;
+    virtual Command receive () = 0;
+    virtual void send (const Command& cmd) = 0;
 
   protected:
 

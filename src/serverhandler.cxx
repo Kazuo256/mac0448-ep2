@@ -20,24 +20,20 @@ ServerHandler::ServerHandler () :
   CommandHandler() {}
 
 void ServerHandler::handle (Connection *connection, const Command& cmd) {
-  cout << static_cast<string>(cmd) << "\n";
-  string packet;
+  //cout << static_cast<string>(cmd) << "\n";
+  Command response = Command::null_cmd();
   stringstream args;
   switch(cmd.opcode()) {
     case Command::REQUEST_ID:
       args << connection->sockfd();
-      packet = Command::give_id(args.str()).make_packet();
+      response = Command::give_id(args.str());
       break;
     default:
-      packet = cmd.make_packet();
-      if ((fputs(packet.c_str(),stdout)) == EOF) {
-         perror("fputs error");
-         exit (1);
-      }
+      response = cmd;
       break;
   }
   /* Agora envia a resposta para o cliente */
-  connection->send(packet);
+  connection->send(response);
 }
 
 } // namespace ep2
