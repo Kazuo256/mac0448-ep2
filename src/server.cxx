@@ -1,8 +1,8 @@
 
 #include <vector>
-#include <map>
 #include <string>
 #include <iostream>
+#include <tr1/unordered_map>
 #include <tr1/functional>
 
 #include "connection.h"
@@ -12,9 +12,9 @@
 #include "serverhandler.h"
 
 using std::vector;
-using std::map;
 using std::string;
 using std::cin;
+using std::tr1::unordered_map;
 
 using ep2::Connection;
 using ep2::TCPConnection;
@@ -22,11 +22,12 @@ using ep2::EventManager;
 using ep2::Command;
 using ep2::ServerHandler;
 
-typedef map<int, Connection*> ConnectionTable;
+typedef unordered_map<int, Connection*>     ConnectionTable;
+typedef unordered_map<string, Connection*>  UserTable;
 
 static TCPConnection    server;
 static ConnectionTable  table;
-static EventManager    manager;
+static EventManager     manager;
 
 static void clear_clients (ConnectionTable& table) {
   for (ConnectionTable::iterator it = table.begin(); it != table.end(); ++it)
@@ -52,13 +53,7 @@ static EventManager::Status command_event (Connection* client) {
   }
   /* Lê a linha enviada pelo cliente e escreve na saída padrão */
   Command cmd = Command::from_packet(packet);
-  ServerHandler().handle(cmd);
-  if ((fputs(packet.c_str(),stdout)) == EOF) {
-     perror("fputs error");
-     exit (1);
-  }
-  /* Agora re-envia a linha para o cliente */
-  client->send(packet);
+  ServerHandler().handle(client, cmd);
   return EventManager::CONTINUE;
 }
 

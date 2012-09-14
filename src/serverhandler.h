@@ -12,7 +12,7 @@ class ServerHandler : public CommandHandler {
 
     ServerHandler ();
 
-    void handle (const Command& cmd);
+    void handle (Connection *connection, const Command& cmd);
 
 };
 

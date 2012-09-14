@@ -12,6 +12,16 @@ class Command {
 
   public:
 
+    typedef unsigned char             byte;
+
+    const static byte REQUEST_ID = 0x1,
+                      NICK = 0x2,
+                      DISCONNECT = 0x3,
+                      MSG = 0x4;
+
+    byte opcode () const { return opcode_; }
+    std::string arg (size_t idx) const { return data_[idx]; }
+
     std::string make_packet () const;
 
     operator std::string () const;
@@ -19,6 +29,7 @@ class Command {
     static Command from_packet (const std::string& packet);
 
     // Client commands
+    static Command request_id ();
     static Command nick (const std::string& name); 
     static Command msg (const std::string& name, const std::string& msg);
     static Command disconnect ();
@@ -27,17 +38,14 @@ class Command {
     static Command accept (const std::string& name, const std::string& file);
     static Command refuse (const std::string& name, const std::string& file);
 
+    // Server Commands
+
   private:
 
-    typedef unsigned char             byte;
     typedef std::vector<std::string>  arg_list;
 
     byte      opcode_;
     arg_list  data_;
-
-    const static byte NICK = 0x1,
-                      DISCONNECT = 0x2,
-                      MSG = 0x3;
 
     Command (byte opcode, const arg_list& data = arg_list()) :
       opcode_(opcode), data_(data) {}

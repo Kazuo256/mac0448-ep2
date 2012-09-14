@@ -38,6 +38,10 @@ Command Command::from_packet (const string& packet) {
   return cmd;
 }
 
+Command Command::request_id () {
+  return Command(REQUEST_ID, arg_list());
+}
+
 Command Command::nick (const string& name) {
   return Command(NICK, arg_list(1, name));
 }
