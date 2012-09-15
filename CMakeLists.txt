@@ -19,6 +19,7 @@ set (
 set (
   EP2_SERVER_SRC
   src/server.cxx
+  src/serverdata.cxx
   src/serverhandler.cxx
   src/serverhandler.h
 )
