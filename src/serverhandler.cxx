@@ -23,7 +23,6 @@ ServerHandler::ServerHandler (ServerData* serverdata) :
 
 void ServerHandler::handle (Connection *client, const Command& cmd) {
   cout << static_cast<string>(cmd) << "\n";
-  Connection* write_connec; 
   Command response = Command::null_cmd();
   stringstream args;
   switch(cmd.opcode()) {
@@ -34,10 +33,11 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
     case Command::NICK:
       if (serverdata_->used(cmd.arg(0))) {
         response = Command::refuse_nick();
+      } else {
+        serverdata_->set_user(cmd.arg(0), client);
+        response = Command::accept_nick();
       }
-      write_connec = serverdata_->get_connection(atoi(cmd.arg(1).c_str()));
-      serverdata_->set_user(cmd.arg(0), write_connec);
-      response = Command::accpet_nick();
+      break;
     default:
       response = cmd;
       break;

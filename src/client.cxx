@@ -44,17 +44,31 @@ static EventManager::Status server_event () {
 
 // EVENTOS DE PROMPT
 
+static bool secondary_connected = false;
+
 static void nick_event (const string& nick, const string& unused) {
   if (nick.empty())
     cout << "Nick vazio inválido.\n";
   else {
-    // Abre conexão secundária
-    server_output.connect(hostname, port);
+    if (!secondary_connected) {
+      // Abre conexão secundária
+      server_output.connect(hostname, port);
+      secondary_connected = true;
+    }
     // Pede para associar um novo nick ao ID
     stringstream ID_string;
     ID_string << ID;
     server_output.send(Command::nick(nick, ID_string.str()));
-    manager.add_event(server_output.sockfd(), server_event);   
+    Command response = server_output.receive();
+    cout << string(response);
+    if (response.opcode() == Command::REFUSE_NICK)
+      cout << "[Nick '" << nick << "' was refused]\n";
+    else if (response.opcode() == Command::ACCEPT_NICK) {
+      cout << "[Now using nick '" << nick << "'].\n";
+      manager.add_event(server_output.sockfd(), server_event);   
+    }
+    else
+      cout << "[Unexpected answer from server]\n";
   }
 } 
 

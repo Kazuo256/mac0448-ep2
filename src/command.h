@@ -47,7 +47,7 @@ class Command {
     // Server Commands
     static Command give_id (const std::string& id);
     static Command refuse_nick ();
-    static Command accpet_nick ();
+    static Command accept_nick ();
 
   private:
 

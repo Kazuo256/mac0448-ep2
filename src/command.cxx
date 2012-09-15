@@ -21,10 +21,14 @@ string Command::make_packet () const {
 Command::operator string () const {
   switch(opcode_) {
     case REQUEST_ID:
-      return string("ID requested.");
+      return "ID requested.";
     case NICK:
       return string("Nick requested: ")
              + (data_.size() ? data_[0] : "<empty>");
+    case REFUSE_NICK:
+      return "Nick refused";
+    case ACCEPT_NICK:
+      return "Nick accepted";
     default:
       return "Unknown command";
   }
@@ -70,7 +74,7 @@ Command Command::refuse_nick () {
   return Command(REFUSE_NICK, arg_list());
 }
 
-Command Command::accpet_nick () {
+Command Command::accept_nick () {
   return Command(ACCEPT_NICK, arg_list());
 }
 
