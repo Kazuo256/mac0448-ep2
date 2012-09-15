@@ -59,7 +59,7 @@ Command Command::disconnect () {
 }
 
 Command Command::give_id (const string& id) {
-  return Command(GIVE_ID, arg_list(1, id));
+  return generic_cmd<GIVE_ID>(id);
 }
 
 } // namespace ep2

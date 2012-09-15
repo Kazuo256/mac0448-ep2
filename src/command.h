@@ -32,10 +32,6 @@ class Command {
 
     static Command null_cmd () { return Command(0xff); }
 
-    template <byte CODE>
-    static Command generic_cmd (const std::string& arg1,
-                                const std::string& arg2);
-
     // Client commands
     static Command request_id ();
     static Command nick (const std::string& name, const std::string& id); 
@@ -59,7 +55,19 @@ class Command {
     Command (byte opcode, const arg_list& data = arg_list()) :
       opcode_(opcode), data_(data) {}
 
+    template <byte CODE>
+    static Command generic_cmd (const std::string& arg1);
+
+    template <byte CODE>
+    static Command generic_cmd (const std::string& arg1,
+                                const std::string& arg2);
+
 };
+
+template <Command::byte CODE>
+inline Command Command::generic_cmd (const std::string& arg1) {
+  return Command(CODE, arg_list(1, arg1));
+}
 
 template <Command::byte CODE>
 inline Command Command::generic_cmd (const std::string& arg1,
