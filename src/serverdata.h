@@ -31,6 +31,7 @@ class ServerData {
     Connection* get_connection (const std::string& user);
     bool used (const std::string& user);
     void erase_connection (const std::string& key);
+    void get_list (std::vector<string>& list);
     // Other coisas
     void add_event (int fd, const EventManager::Callback& callback);
     

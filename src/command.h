@@ -13,15 +13,18 @@ class Command {
   public:
 
     typedef unsigned char             byte;
+    typedef std::vector<std::string>  ArgList;
 
     const static byte REQUEST_ID = 0x1,
                       NICK = 0x2,
                       DISCONNECT = 0x3,
                       MSG = 0x4,
+                      LIST_REQUEST = 0x5,
                       GIVE_ID = 0x11,
                       REFUSE_NICK = 0x12,
                       ACCEPT_NICK = 0x13,
-                      MAX_COMMAND = 0x14;
+                      LIST_RESPONSE = 0x14,
+                      MAX_COMMAND = 0x15;
 
     byte opcode () const { return opcode_; }
     std::string arg (size_t idx) const { return data_[idx]; }
@@ -40,23 +43,22 @@ class Command {
     static Command msg (const std::string& name, const std::string& msg);
     static Command disconnect ();
     static Command send (const std::string& name, const std::string& path);
-    static Command list ();
     static Command accept (const std::string& name, const std::string& file);
     static Command refuse (const std::string& name, const std::string& file);
+    static Command list_request ();
 
     // Server Commands
     static Command give_id (const std::string& id);
     static Command refuse_nick ();
     static Command accept_nick ();
+    static Command list_response ();
 
   private:
 
-    typedef std::vector<std::string>  arg_list;
-
     byte      opcode_;
-    arg_list  data_;
+    ArgList  data_;
 
-    Command (byte opcode, const arg_list& data = arg_list()) :
+    Command (byte opcode, const ArgList& data = ArgList()) :
       opcode_(opcode), data_(data) {}
 
     template <byte CODE>
@@ -70,7 +72,7 @@ class Command {
 
 template <Command::byte CODE>
 inline Command Command::generic_cmd (const std::string& arg1) {
-  return Command(CODE, arg_list(1, arg1));
+  return Command(CODE, ArgList(1, arg1));
 }
 
 template <Command::byte CODE>

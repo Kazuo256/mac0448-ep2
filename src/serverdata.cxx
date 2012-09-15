@@ -44,6 +44,12 @@ void ServerData::erase_connection (const string& key) {
   user_.erase(key);
 }
 
+void get_list (std::vector<string> list&) {
+  for (UserTable::iterator it = table_.begin(); it != table_.end(); ++it) {
+    list.push_back(it->first);
+  }
+}
+
 void ServerData::add_event (int fd, const EventManager::Callback& callback) {
   manager_.add_event(fd, callback);
 }

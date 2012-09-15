@@ -24,6 +24,7 @@ ServerHandler::ServerHandler (ServerData* serverdata) :
 void ServerHandler::handle (Connection *client, const Command& cmd) {
   cout << static_cast<string>(cmd) << "\n";
   Command response = Command::null_cmd();
+  Command::ArgList arg_list;
   stringstream args;
   switch(cmd.opcode()) {
     case Command::REQUEST_ID:
@@ -37,6 +38,10 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
         serverdata_->set_user(cmd.arg(0), client);
         response = Command::accept_nick();
       }
+      break;
+    case Command::LIST_REQUEST:
+      serverdata_->get_list(arg_list);
+      response = Command::list_request();
       break;
     default:
       response = cmd;

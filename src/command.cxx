@@ -10,7 +10,7 @@ string Command::make_packet () const {
   string packet;
   packet += opcode_;
   packet += data_.size();
-  for (arg_list::const_iterator it = data_.begin(); it != data_.end(); ++it) {
+  for (ArgList::const_iterator it = data_.begin(); it != data_.end(); ++it) {
     packet += static_cast<byte>(it->size());
     packet += *it;
   }
@@ -49,7 +49,7 @@ Command Command::from_packet (const string& packet) {
 // Client commands
 
 Command Command::request_id () {
-  return Command(REQUEST_ID, arg_list());
+  return Command(REQUEST_ID, ArgList());
 }
 
 Command Command::nick (const string& name, const string& id) {
@@ -61,7 +61,11 @@ Command Command::msg (const string& nick, const string& msg) {
 }
 
 Command Command::disconnect () {
-  return Command(DISCONNECT, arg_list());
+  return Command(DISCONNECT, ArgList());
+}
+
+Command Command::list_request () {
+  return Command(LIST_REQUEST, ArgList());
 }
 
 // Server Commands
@@ -71,11 +75,15 @@ Command Command::give_id (const string& id) {
 }
 
 Command Command::refuse_nick () {
-  return Command(REFUSE_NICK, arg_list());
+  return Command(REFUSE_NICK, ArgList());
 }
 
 Command Command::accept_nick () {
-  return Command(ACCEPT_NICK, arg_list());
+  return Command(ACCEPT_NICK, ArgList());
+}
+
+Command Command::list_response (const ArgList& arg_list) {
+  return Command(LIST_RESPONSE, arg_list);
 }
 
 } // namespace ep2
