@@ -29,26 +29,26 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
   switch(cmd.opcode()) {
     case Command::REQUEST_ID:
       args << client->sockfd();
-      response = Command::give_id(args.str());
+      client->send(Command::give_id(args.str()));
       break;
     case Command::NICK:
       if (serverdata_->used(cmd.arg(0))) {
-        response = Command::refuse_nick();
       } else {
         serverdata_->set_user(cmd.arg(0), client);
-        response = Command::accept_nick();
+        client->send(Command::accept_nick());
       }
       break;
     case Command::LIST_REQUEST:
       serverdata_->get_list(arg_list);
-      response = Command::list_request();
+      client->send(Command::list_request());
+      break;
+    case Command::MSG:
+
       break;
     default:
       response = cmd;
       break;
   }
-  /* Agora envia a resposta para o cliente */
-  client->send(response);
 }
 
 } // namespace ep2
