@@ -21,6 +21,8 @@ using ep2::TCPConnection;
 using ep2::EventManager;
 using ep2::Command;
 
+static string         hostname;
+static unsigned short port;
 static EventManager   manager;
 static Prompt         prompt;
 static TCPConnection  server_output, server_input;
@@ -34,14 +36,26 @@ static EventManager::Status prompt_event () {
     : EventManager::EXIT;
 }
 
+static EventManager::Status server_event () {
+  Command cmd = server_output.receive();
+  cout << "Received command: " << static_cast<string>(cmd) << "\n";
+  return EventManager::CONTINUE;
+}
+
 // EVENTOS DE PROMPT
 
 static void nick_event (const string& nick, const string& unused) {
-  stringstream ID_string;
-  ID_string << ID;
-  server_input.send(Command::nick(nick, ID_string.str()));
-  Command response = server_input.receive();
-  cout << (string)response << "\n";
+  if (nick.empty())
+    cout << "Nick vazio inválido.\n";
+  else {
+    // Abre conexão secundária
+    server_output.connect(hostname, port);
+    // Pede para associar um novo nick ao ID
+    stringstream ID_string;
+    ID_string << ID;
+    server_input.send(Command::nick(nick, ID_string.str()));
+    manager.add_event(server_output.sockfd(), server_event);   
+  }
 } 
 
 // MAIN
@@ -52,9 +66,12 @@ int main(int argc, char **argv) {
       fprintf(stderr,"Uso: %s <Endereco IP|Nome> <Porta>\n",argv[0]);
 		exit(1);
 	}
+  
+  hostname = argv[1];
+  port = atoi(argv[2]);
 
   // Conexão primária
-  server_input.connect(argv[1], atoi(argv[2]));
+  server_input.connect(hostname, port);
   // Pede ID
   server_input.send(Command::request_id());
   Command cmd = server_input.receive();

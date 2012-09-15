@@ -214,7 +214,10 @@ Command TCPConnection::receive () {
 void TCPConnection::send (const Command& cmd) {
   string packet = cmd.make_packet();
   size_t size = packet.size();
-  write(sockfd(), packet.c_str(), size); 
+  if (write(sockfd(), packet.c_str(), size) < 0) {
+    perror("write error");
+    exit(1);
+  }
 }
 
 
