@@ -1,0 +1,40 @@
+
+#include "serverdata.h"
+
+using std::string;
+
+namespace ep2 {
+// ConnectionTable
+void ServerData::set_connection (Connection* connection) {
+	table_[connection->sockfd()] = connection;
+}
+
+Connection* ServerData::get_connection (int key) {
+  ConnectionTable::const_iterator it = table_.find(key);
+  if (it == table_.end()) return NULL;
+  return it->second;
+}
+
+void ServerData::erase_connection (int key) {
+	table_.erase(key);
+}
+// UserTable
+void ServerData::set_user (const string& user, Connection* connection) {
+  user_[user] = connection;
+}
+
+Connection* ServerData::get_connection (const string& user) {
+  UserTable::const_iterator it = user_.find(user);
+  if (it == user_.end()) return NULL;
+  return it->second;
+}
+
+void ServerData::erase_connection (const string& key) {
+  user_.erase(key);
+}
+
+void ServerData::add_event (int fd, const EventManager::Callback& callback) {
+  manager_.add_event(fd, callback);
+}
+
+} // namespace ep2
