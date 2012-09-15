@@ -41,7 +41,7 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
       break;
     case Command::LIST_REQUEST:
       serverdata_->get_list(arg_list);
-      response = Command::list_request();
+      response = Command::list_response(arg_list);
       break;
     default:
       response = cmd;
