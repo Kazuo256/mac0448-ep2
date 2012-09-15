@@ -47,10 +47,7 @@ Command Command::request_id () {
 }
 
 Command Command::nick (const string& name, const string& id) {
-  arg_list args;
-  args.push_back(name);
-  args.push_back(id);
-  return Command(NICK, args);
+  return generic_cmd<NICK>(name, id);
 }
 
 Command Command::msg (const string& nick, const string& msg) {
