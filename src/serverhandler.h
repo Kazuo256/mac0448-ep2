@@ -6,13 +6,17 @@
 
 namespace ep2 {
 
+class ServerData;
+
 class ServerHandler : public CommandHandler {
 
   public:
 
-    ServerHandler ();
+    ServerHandler (ServerData* serverdata);
 
-    void handle (Connection *connection, const Command& cmd);
+    void handle (Connection *client, const Command& cmd);
+  private:
+    ServerData*  serverdata_;
 
 };
 

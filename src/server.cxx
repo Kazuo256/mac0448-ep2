@@ -7,9 +7,10 @@
 
 #include "connection.h"
 #include "TCPconnection.h"
-#include "eventmanager.h"
 #include "command.h"
 #include "serverhandler.h"
+#include "eventmanager.h"
+#include "serverdata.h"
 
 using std::vector;
 using std::string;
@@ -22,20 +23,12 @@ using ep2::TCPConnection;
 using ep2::EventManager;
 using ep2::Command;
 using ep2::ServerHandler;
+using ep2::ServerData;
 
-typedef unordered_map<int, Connection*>     ConnectionTable;
-typedef unordered_map<string, Connection*>  UserTable;
-
-static TCPConnection    server;
-static ConnectionTable  table;
 static EventManager     manager;
-
-static void clear_clients (ConnectionTable& table) {
-  for (ConnectionTable::iterator it = table.begin(); it != table.end(); ++it)
-    delete it->second;
-  table.clear();
-}
-
+static ServerData       serverdata(manager);
+static ServerHandler    serverhandler(&serverdata);
+static TCPConnection    server;
 // EVENTS
 
 static EventManager::Status prompt_event () {
@@ -48,18 +41,17 @@ static EventManager::Status command_event (Connection* client) {
   Command cmd = client->receive();
   // Check end of client msgs
   if (cmd.opcode() == Command::DISCONNECT) {
-    table.erase(client->sockfd());
     delete client;
     return EventManager::STOP;
   }
   /* Lê a linha enviada pelo cliente e escreve na saída padrão */
-  ServerHandler().handle(client, cmd);
+  serverhandler.handle(client, cmd);
   return EventManager::CONTINUE;
 }
 
 static EventManager::Status accept_event () {
   Connection *client = server.accept();
-  table[client->sockfd()] = client;
+  serverdata.set_connection(client);
   manager.add_event(client->sockfd(), std::tr1::bind(command_event, client));
   return EventManager::CONTINUE;
 }
@@ -75,7 +67,5 @@ int main (int argc, char **argv) {
   manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
   manager.add_event(server.sockfd(), EventManager::Callback(accept_event));
   manager.loop();
-  clear_clients(table);
 	return 0;
 }
-
