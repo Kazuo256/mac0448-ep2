@@ -15,6 +15,12 @@ Connection* ServerData::get_connection (int key) {
   return it->second;
 }
 
+
+bool ServerData::used (int key) {
+  if (get_connection(key)) return true;
+  return false; 
+}
+
 void ServerData::erase_connection (int key) {
 	table_.erase(key);
 }
@@ -27,6 +33,11 @@ Connection* ServerData::get_connection (const string& user) {
   UserTable::const_iterator it = user_.find(user);
   if (it == user_.end()) return NULL;
   return it->second;
+}
+
+bool ServerData::used (const string& user) {
+  if (get_connection(user)) return true;
+  return false; 
 }
 
 void ServerData::erase_connection (const string& key) {

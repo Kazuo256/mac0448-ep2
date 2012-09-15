@@ -42,6 +42,8 @@ Command Command::from_packet (const string& packet) {
   return cmd;
 }
 
+// Client commands
+
 Command Command::request_id () {
   return Command(REQUEST_ID, arg_list());
 }
@@ -58,8 +60,18 @@ Command Command::disconnect () {
   return Command(DISCONNECT, arg_list());
 }
 
+// Server Commands
+
 Command Command::give_id (const string& id) {
   return generic_cmd<GIVE_ID>(id);
+}
+
+Command Command::refuse_nick () {
+  return Command(REFUSE_NICK, arg_list());
+}
+
+Command Command::accpet_nick () {
+  return Command(ACCEPT_NICK, arg_list());
 }
 
 } // namespace ep2

@@ -24,10 +24,12 @@ class ServerData {
     // ConnectionTable
     void set_connection (Connection* connection);
     Connection* get_connection (int key);
+    bool used (int key);
     void erase_connection (int key);
     // UserTable
     void set_user (const std::string& user, Connection* connection);
     Connection* get_connection (const std::string& user);
+    bool used (const std::string& user);
     void erase_connection (const std::string& key);
     // Other coisas
     void add_event (int fd, const EventManager::Callback& callback);
