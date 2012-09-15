@@ -72,13 +72,18 @@ void Prompt::init () {
   cmd_map_["/exit"] = handle_exit;
   cmd_map_["/accept"] = handle_accept;
   cmd_map_["/refuse"] = handle_refuse;
+  printf("> ");
+  fflush(stdout);
 }
 
 bool Prompt::send_command (Connection *server) {
   string line;
   string cmd, arg, data;
   getline(cin, line);
-  if (cin.eof()) return false;
+  if (cin.eof()) {
+    putchar('\n');
+    return false;
+  }
   stringstream tokens(line);
   tokens >> cmd >> arg >> data;
   /* Escreve a linha lida no socket */
@@ -87,6 +92,8 @@ bool Prompt::send_command (Connection *server) {
   if (response.opcode() == Command::GIVE_ID)
     cout << "Recebeu ID " << response.arg(0) << "\n";
   cout << (string)response << "\n";
+  printf("> ");
+  fflush(stdout);
   return true;
 }
 
