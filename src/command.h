@@ -24,10 +24,13 @@ class Command {
                       REFUSE_NICK = 0x12,
                       ACCEPT_NICK = 0x13,
                       LIST_RESPONSE = 0x14,
-                      MAX_COMMAND = 0x15;
+                      MSG_FAIL = 0x15,
+                      MSG_OK = 0x16
+                      MAX_COMMAND = 0x17;
 
     byte opcode () const { return opcode_; }
     std::string arg (size_t idx) const { return data_[idx]; }
+    size_t num_args () const { return data_.size(); }
 
     std::string make_packet () const;
 
@@ -51,7 +54,7 @@ class Command {
     static Command give_id (const std::string& id);
     static Command refuse_nick ();
     static Command accept_nick ();
-    static Command list_response ();
+    static Command list_response (const ArgList& arg_list);
 
   private:
 
@@ -78,7 +81,7 @@ inline Command Command::generic_cmd (const std::string& arg1) {
 template <Command::byte CODE>
 inline Command Command::generic_cmd (const std::string& arg1,
                                      const std::string& arg2) {
-  arg_list args;
+  ArgList args;
   args.push_back(arg1);
   args.push_back(arg2);
   return Command(CODE, args);

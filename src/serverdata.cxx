@@ -1,9 +1,11 @@
 
 #include "serverdata.h"
 
-using std::string;
-
 namespace ep2 {
+
+using std::string;
+using std::vector;
+
 // ConnectionTable
 void ServerData::set_connection (Connection* connection) {
 	table_[connection->sockfd()] = connection;
@@ -44,8 +46,25 @@ void ServerData::erase_connection (const string& key) {
   user_.erase(key);
 }
 
-void get_list (std::vector<string> list&) {
-  for (UserTable::iterator it = table_.begin(); it != table_.end(); ++it) {
+string ServerData::get_user (const Connection* connection) {
+  UserTable::iterator user = user_.begin();
+  for (UserTable::iterator it = user_.begin(); it != user_.end(); ++it) {
+    if (it->second == connection) user = it;
+  }
+  if (!(user == user_.begin())) {
+    return user->first;
+  } 
+  return "";
+}
+
+void ServerData::erase_user (const Connection* connection) {
+  if (get_user(connection) != "") {
+    table_.erase(toBeRemoved);
+  }
+}
+
+void ServerData::get_list (vector<string>& list) {
+  for (UserTable::iterator it = user_.begin(); it != user_.end(); ++it) {
     list.push_back(it->first);
   }
 }

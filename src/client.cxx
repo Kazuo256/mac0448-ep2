@@ -60,7 +60,6 @@ static void nick_event (const string& nick, const string& unused) {
     ID_string << ID;
     server_output.send(Command::nick(nick, ID_string.str()));
     Command response = server_output.receive();
-    cout << string(response);
     if (response.opcode() == Command::REFUSE_NICK)
       cout << "[Nick '" << nick << "' was refused]\n";
     else if (response.opcode() == Command::ACCEPT_NICK) {
@@ -72,11 +71,16 @@ static void nick_event (const string& nick, const string& unused) {
   }
 } 
 
-static void msg_event (const string& nick, const string& msg) {
-  if (nick.empty() || msg.empty())
-    cout << "Nick ou mensagem vazios\n";
+static void list_event (const string& unused1, const string& unused2) {
+  server_input.send(Command::list_request());
+  Command response = server_input.receive();
+  if (response.opcode() == Command::LIST_RESPONSE) {
+    cout << "[Currently on-line users:]\n";
+    for (size_t i = 0; i < response.num_args(); ++i)
+      cout << "  " << response.arg(i) << "\n";
+  }
   else
-    server_input.send(Command::msg(nick, msg));
+    cout << "[Unexpected answer from server]\n";
 }
 
 // MAIN
@@ -102,6 +106,7 @@ int main(int argc, char **argv) {
   // Prepara e entra em loop
   prompt.init();
   prompt.add_command("/nick", nick_event);
+  prompt.add_command("/list", list_event);
   manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
   manager.loop();
    

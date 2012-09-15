@@ -86,5 +86,17 @@ Command Command::list_response (const ArgList& arg_list) {
   return Command(LIST_RESPONSE, arg_list);
 }
 
+Command Command::msg (const string& user, const string& msg) {
+  return generic_cmd<MSG>(user, msg);
+}
+
+Command Command::msg_fail () {
+  return Command(MSG_FAIL, ArgList());
+}
+
+Command Command::msg_ok () {
+  return Command(MSG_OK, ArgList());
+}
+
 } // namespace ep2
 

@@ -25,6 +25,8 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
   cout << static_cast<string>(cmd) << "\n";
   Command response = Command::null_cmd();
   Command::ArgList arg_list;
+  Connection* resp_connec;
+  string sender;
   stringstream args;
   switch(cmd.opcode()) {
     case Command::REQUEST_ID:
@@ -33,6 +35,7 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
       break;
     case Command::NICK:
       if (serverdata_->used(cmd.arg(0))) {
+		    client->send(Command::refuse_nick());
       } else {
         serverdata_->set_user(cmd.arg(0), client);
         client->send(Command::accept_nick());
@@ -43,7 +46,14 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
       client->send(Command::list_request());
       break;
     case Command::MSG:
-
+      if (serverdata_->used(cmd.arg(0))) {
+        resp_connec = serverdata_->get_connection(cmd.arg(0));
+        sender = serverdata_->get_user(client);
+        resp_connec->send(Command::msg(sender, cmd.arg(1)));
+        client->send(Command::msg_ok());
+      } else {
+        client->send(Command::msg_fail());
+      }
       break;
     default:
       response = cmd;
