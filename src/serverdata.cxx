@@ -8,12 +8,12 @@ using std::vector;
 
 // ConnectionTable
 void ServerData::set_connection (Connection* connection) {
-	table_[connection->sockfd()] = connection;
+	connections_[connection->sockfd()] = connection;
 }
 
 Connection* ServerData::get_connection (int key) {
-  ConnectionTable::const_iterator it = table_.find(key);
-  if (it == table_.end()) return NULL;
+  ConnectionTable::const_iterator it = connections_.find(key);
+  if (it == connections_.end()) return NULL;
   return it->second;
 }
 
@@ -24,9 +24,26 @@ bool ServerData::used (int key) {
 }
 
 void ServerData::erase_connection (int key) {
-	table_.erase(key);
+	connections_.erase(key);
 }
+
+// LinkTable
+
+void ServerData::link_connections (int key, const std::string& user) {
+  links_[key] = user;
+}
+
+string ServerData::get_link (int key) const {
+  LinkTable::const_iterator it = links_.find(key);
+  return (it != links_.end()) ? it->second : "";
+}
+
+void ServerData::remove_link (int key) {
+  links_.erase(key);
+}
+
 // UserTable
+
 void ServerData::set_user (const string& user, Connection* connection) {
   user_[user] = connection;
 }
@@ -47,20 +64,24 @@ void ServerData::erase_connection (const string& key) {
 }
 
 string ServerData::get_user (const Connection* connection) {
-  UserTable::iterator user = user_.begin();
+  UserTable::iterator user = user_.end();
   for (UserTable::iterator it = user_.begin(); it != user_.end(); ++it) {
     if (it->second == connection) user = it;
   }
-  if (!(user == user_.begin())) {
+  if (user != user_.end()) {
     return user->first;
   } 
   return "";
 }
 
 void ServerData::erase_user (const Connection* connection) {
-  if (get_user(connection) != "") {
-    table_.erase(toBeRemoved);
-  }
+  string to_be_removed = get_user(connection);
+  if (to_be_removed.size())
+    user_.erase(to_be_removed);
+}
+
+void ServerData::erase_user (const string& key) {
+  user_.erase(key);
 }
 
 void ServerData::get_list (vector<string>& list) {

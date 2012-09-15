@@ -38,17 +38,18 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
 		    client->send(Command::refuse_nick());
       } else {
         serverdata_->set_user(cmd.arg(0), client);
+        serverdata_->link_connections(atoi(cmd.arg(1).c_str()), cmd.arg(0));
         client->send(Command::accept_nick());
       }
       break;
     case Command::LIST_REQUEST:
       serverdata_->get_list(arg_list);
-      client->send(Command::list_request());
+      client->send(Command::list_response(arg_list));
       break;
     case Command::MSG:
       if (serverdata_->used(cmd.arg(0))) {
         resp_connec = serverdata_->get_connection(cmd.arg(0));
-        sender = serverdata_->get_user(client);
+        sender = serverdata_->get_link(client->sockfd());
         resp_connec->send(Command::msg(sender, cmd.arg(1)));
         client->send(Command::msg_ok());
       } else {

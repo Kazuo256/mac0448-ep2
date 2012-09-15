@@ -39,12 +39,21 @@ static EventManager::Status prompt_event () {
 static EventManager::Status server_event () {
   Command cmd = server_output.receive();
   cout << "Received command: " << static_cast<string>(cmd) << "\n";
+  if (cmd.opcode() == Command::MSG) {
+    if (cmd.num_args() < 2)
+      cout << "[Bad message from server]\n";
+    else {
+      cout << "[Message from '" << cmd.arg(0) << "':] ";
+      cout << cmd.arg(1) << "\n";
+    }
+  }
   return EventManager::CONTINUE;
 }
 
 // EVENTOS DE PROMPT
 
-static bool secondary_connected = false;
+static bool   secondary_connected = false;
+static string current_nick = "";
 
 static void nick_event (const string& nick, const string& unused) {
   if (nick.empty())
@@ -65,6 +74,7 @@ static void nick_event (const string& nick, const string& unused) {
     else if (response.opcode() == Command::ACCEPT_NICK) {
       cout << "[Now using nick '" << nick << "'].\n";
       manager.add_event(server_output.sockfd(), server_event);   
+      current_nick = nick;
     }
     else
       cout << "[Unexpected answer from server]\n";
@@ -81,6 +91,23 @@ static void list_event (const string& unused1, const string& unused2) {
   }
   else
     cout << "[Unexpected answer from server]\n";
+}
+
+static void msg_event (const string& target, const string& msg) {
+  if (current_nick.empty())
+    cout << "[You cannot send messages without a nick!]\n";
+  else if (target.empty() || msg.empty())
+    cout << "[Invalid empty target nick or message]\n";
+  else {
+    server_input.send(Command::msg(target, msg));
+    Command response = server_input.receive();
+    if (response.opcode() == Command::MSG_OK)
+      cout << "[Message sent to '" << target << "']\n";
+    else if (response.opcode() == Command::MSG_FAIL)
+      cout << "[Failed to send message to '" << target << "']\n";
+    else
+      cout << "[Unexpected answer from server]\n";
+  }
 }
 
 // MAIN
@@ -107,6 +134,7 @@ int main(int argc, char **argv) {
   prompt.init();
   prompt.add_command("/nick", nick_event);
   prompt.add_command("/list", list_event);
+  prompt.add_command("/msg", msg_event);
   manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
   manager.loop();
    

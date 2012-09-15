@@ -41,8 +41,11 @@ static EventManager::Status command_event (Connection* client) {
   Command cmd = client->receive();
   // Check end of client msgs
   if (cmd.opcode() == Command::DISCONNECT) {
+    string nick = serverdata.get_link(client->sockfd());
+    serverdata.remove_link(client->sockfd());
     serverdata.erase_connection(client->sockfd());
-    serverdata.erase_user(client);
+    if (nick.size())
+      serverdata.erase_user(nick);
     delete client;
     return EventManager::STOP;
   }

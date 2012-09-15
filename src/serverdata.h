@@ -17,32 +17,39 @@ class ServerData {
     ServerData (EventManager& manager) :
       manager_(manager) {}
     ~ServerData () {
-      for (ConnectionTable::iterator it = table_.begin(); it != table_.end(); ++it)
+      for (ConnectionTable::iterator it = connections_.begin(); it != connections_.end(); ++it)
         delete it->second;
-      table_.clear();
+      connections_.clear();
     }
     // ConnectionTable
     void set_connection (Connection* connection);
     Connection* get_connection (int key);
     bool used (int key);
     void erase_connection (int key);
+    // LinkTable
+    void link_connections (int key, const std::string& user);
+    std::string get_link (int key) const;
+    void remove_link (int key);
     // UserTable
     void set_user (const std::string& user, Connection* connection);
     Connection* get_connection (const std::string& user);
     bool used (const std::string& user);
     void erase_connection (const std::string& key);
-    string get_user (const Connection* connection);
+    std::string get_user (const Connection* connection);
     void erase_user (const Connection* connection);
+    void erase_user (const std::string& key);
     void get_list (std::vector<std::string>& list);
     // Other coisas
     void add_event (int fd, const EventManager::Callback& callback);
     
   private:
-    typedef std::tr1::unordered_map<int, Connection*>     ConnectionTable;
-    typedef std::tr1::unordered_map<std::string, Connection*>  UserTable;
+    typedef std::tr1::unordered_map<int, Connection*>         ConnectionTable;
+    typedef std::tr1::unordered_map<int, std::string>         LinkTable;
+    typedef std::tr1::unordered_map<std::string, Connection*> UserTable;
 
     UserTable         user_;
-    ConnectionTable   table_;
+    ConnectionTable   connections_;
+    LinkTable         links_;
     EventManager&     manager_;
 };
   
