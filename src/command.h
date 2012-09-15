@@ -34,7 +34,7 @@ class Command {
 
     // Client commands
     static Command request_id ();
-    static Command nick (const std::string& name); 
+    static Command nick (const std::string& name, const std::string& id); 
     static Command msg (const std::string& name, const std::string& msg);
     static Command disconnect ();
     static Command send (const std::string& name, const std::string& path);

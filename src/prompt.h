@@ -3,7 +3,8 @@
 #define EP2_PROMPT_H_
 
 #include <string>
-#include <map>
+#include <tr1/unordered_map>
+#include <tr1/functional>
 
 namespace ep2 {
 
@@ -12,17 +13,18 @@ class Command;
 
 class Prompt {
   public:
+    typedef std::tr1::function<void (const std::string&,
+                                     const std::string&)> CommandHandler;
     Prompt () {}
     ~Prompt () { cmd_map_.clear(); }
     void init ();
-    bool send_command (Connection* server);
+    void add_command (const std::string& cmd, const CommandHandler& handler);
+    bool check_input ();
   private:
-    typedef Command (*cmd_handler) (const std::string& arg,
-                                    const std::string& data);
-    typedef std::map<std::string, cmd_handler> CommandMap;
+    typedef std::tr1::unordered_map<std::string, CommandHandler> CommandMap;
     CommandMap  cmd_map_;
-    Command check_cmd (const std::string& cmd, const std::string& arg,
-                       const std::string& data);
+    void run_cmd (const std::string& cmd, const std::string& arg,
+                  const std::string& data);
 };
 
 } // namespace ep2

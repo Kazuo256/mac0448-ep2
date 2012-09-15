@@ -23,7 +23,8 @@ Command::operator string () const {
     case REQUEST_ID:
       return string("ID requested.");
     case NICK:
-      return string("Nick requested: ")+data_[0];
+      return string("Nick requested: ")
+             + (data_.size() ? data_[0] : "<empty>");
     default:
       return "Unknown command";
   }
@@ -45,8 +46,11 @@ Command Command::request_id () {
   return Command(REQUEST_ID, arg_list());
 }
 
-Command Command::nick (const string& name) {
-  return Command(NICK, arg_list(1, name));
+Command Command::nick (const string& name, const string& id) {
+  arg_list args;
+  args.push_back(name);
+  args.push_back(id);
+  return Command(NICK, args);
 }
 
 Command Command::disconnect () {
