@@ -53,6 +53,10 @@ Command Command::nick (const string& name, const string& id) {
   return Command(NICK, args);
 }
 
+Command Command::msg (const string& nick, const string& msg) {
+  return generic_cmd<MSG>(nick, msg);
+}
+
 Command Command::disconnect () {
   return Command(DISCONNECT, arg_list());
 }

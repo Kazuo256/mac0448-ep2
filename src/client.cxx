@@ -53,10 +53,17 @@ static void nick_event (const string& nick, const string& unused) {
     // Pede para associar um novo nick ao ID
     stringstream ID_string;
     ID_string << ID;
-    server_input.send(Command::nick(nick, ID_string.str()));
+    server_output.send(Command::nick(nick, ID_string.str()));
     manager.add_event(server_output.sockfd(), server_event);   
   }
 } 
+
+static void msg_event (const string& nick, const string& msg) {
+  if (nick.empty() || msg.empty())
+    cout << "Nick ou mensagem vazios\n";
+  else
+    server_input.send(Command::msg(nick, msg));
+}
 
 // MAIN
 
