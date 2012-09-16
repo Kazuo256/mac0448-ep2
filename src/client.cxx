@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 
 #include "prompt.h"
 #include "TCPconnection.h"
@@ -14,6 +15,8 @@
 
 using std::string;
 using std::stringstream;
+using std::ifstream;
+using std::ios_base;
 using std::cout;
 
 using ep2::Prompt;
@@ -39,22 +42,38 @@ static EventManager::Status prompt_event () {
 static EventManager::Status server_event () {
   Command cmd = server_output.receive();
   cout << "\n[Received command: " << static_cast<string>(cmd) << "]";
-  if (cmd.opcode() == Command::MSG) {
-    if (cmd.num_args() < 2)
-      cout << "\n[Bad message from server]\n";
-    else {
-      cout << "\n[Message from '" << cmd.arg(0) << "':] ";
-      cout << cmd.arg(1) << "\n> ";
-      cout.flush();
-    }
+  switch (cmd.opcode()) {
+    case Command::MSG:
+    {
+      if (cmd.num_args() < 2)
+        cout << "\n[Bad message from server]\n";
+      else {
+        cout << "\n[Message from '" << cmd.arg(0) << "':] ";
+        cout << cmd.arg(1) << "\n> ";
+        cout.flush();
+      }
+    } break;
+    case Command::SEND:
+    {
+      if (cmd.num_args() < 2)
+        cout << "\n[Bad send command from server]\n";
+      else {
+        cout << "\n['" << cmd.arg(0) << "' wants to send file '" << cmd.arg(1) << "']";
+        cout << "\n[To accept it use '/accept <user>']";
+        cout << "\n> ";
+        cout.flush();
+      }
+    } break;
   }
   return EventManager::CONTINUE;
 }
 
 // EVENTOS DE PROMPT
 
-static bool   secondary_connected = false;
-static string current_nick = "";
+static bool     secondary_connected = false;
+static string   current_nick = "";
+static bool     transfer_pending = false;
+static ifstream current_file;
 
 static void nick_event (const string& nick, const string& unused) {
   if (nick.empty())
@@ -111,6 +130,40 @@ static void msg_event (const string& target, const string& msg) {
   }
 }
 
+static void transfer_event (const string& target, const string& filepath) {
+  if (current_nick.empty()) {
+    cout << "[Você não pode enviar arquivos sem um nick!]\n";
+    return;
+  }
+  if (target.empty() || filepath.empty()) {
+    cout << "[Usuário alvo ou arquivo a ser enviado não definidos]\n";
+    return;
+  }
+  if (transfer_pending)
+    cout << "[Já há uma transferência em execução]\n";
+  current_file.open(filepath.c_str(), ios_base::in | ios_base::binary);
+  if (current_file.fail()) {
+    cout << "[Não foi possível acessar o arquivo '" << filepath << "']\n";
+    return;
+  }
+  server_input.send(Command::send(target, filepath));
+  Command response = server_input.receive();
+  switch (response.opcode()) {
+    case Command::SEND_OK:
+      transfer_pending = true;
+      cout << "[Aguardando resposta do usuário '" << target << "']\n";
+      break;
+    case Command::SEND_FAIL:
+      current_file.close();
+      cout << "[Failed to send file to '" << target << "']\n";
+      break;
+    default:
+      current_file.close();
+      cout << "[Unexpected answer from server]\n";
+      break;
+  }
+}
+
 // MAIN
 
 int main(int argc, char **argv) {
@@ -136,9 +189,10 @@ int main(int argc, char **argv) {
   prompt.add_command("/nick", nick_event);
   prompt.add_command("/list", list_event);
   prompt.add_command("/msg", msg_event);
+  prompt.add_command("/send", transfer_event);
   manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
   manager.loop();
-   
+  if (current_file.is_open()) current_file.close();
   return 0;
 }
 

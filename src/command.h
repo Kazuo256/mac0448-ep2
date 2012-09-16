@@ -20,13 +20,16 @@ class Command {
                       DISCONNECT = 0x3,
                       MSG = 0x4,
                       LIST_REQUEST = 0x5,
+                      SEND = 0x6,
                       GIVE_ID = 0x11,
                       REFUSE_NICK = 0x12,
                       ACCEPT_NICK = 0x13,
                       LIST_RESPONSE = 0x14,
                       MSG_FAIL = 0x15,
                       MSG_OK = 0x16,
-                      MAX_COMMAND = 0x17;
+                      SEND_FAIL = 0x17,
+                      SEND_OK = 0x18,
+                      MAX_COMMAND = 0x19;
 
     byte opcode () const { return opcode_; }
     std::string arg (size_t idx) const { return data_[idx]; }
@@ -57,6 +60,8 @@ class Command {
     static Command list_response (const ArgList& arg_list);
     static Command msg_ok ();
     static Command msg_fail ();
+    static Command send_ok ();
+    static Command send_fail ();
 
   private:
 

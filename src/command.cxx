@@ -64,6 +64,10 @@ Command Command::disconnect () {
   return Command(DISCONNECT, ArgList());
 }
 
+Command Command::send (const string& name, const string& filepath) {
+  return generic_cmd<SEND>(name, filepath);
+}
+
 Command Command::list_request () {
   return Command(LIST_REQUEST, ArgList());
 }
@@ -87,11 +91,19 @@ Command Command::list_response (const ArgList& arg_list) {
 }
 
 Command Command::msg_fail () {
-  return Command(MSG_FAIL, ArgList());
+  return Command(MSG_FAIL);
 }
 
 Command Command::msg_ok () {
-  return Command(MSG_OK, ArgList());
+  return Command(MSG_OK);
+}
+
+Command Command::send_fail () {
+  return Command(SEND_FAIL);
+}
+
+Command Command::send_ok () {
+  return Command(SEND_OK);
 }
 
 } // namespace ep2

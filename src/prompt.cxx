@@ -21,47 +21,6 @@ using std::cin;
 using std::cout;
 using std::stringstream;
 
-//static Command handle_disconnect (const string& arg, const string& data) {
-//  puts(string("ADEUS OTÁRIOS").c_str());
-//  return Command::null_cmd();
-//}
-//
-//static Command handle_nick (const string& arg, const string& data) {
-//  puts((string("Loging with nick '")+arg+"'").c_str());
-//  return Command::nick(arg);
-//}
-//
-//static Command handle_msg (const string& arg, const string& data) {
-//  puts((string("Falando com o brother '")+arg+"' msg '"+data+"'").c_str());
-//  //return "msg\n";
-//  return Command::request_id();
-//}
-//
-//static Command handle_send (const string& arg, const string& data) {
-//  puts((string("Aceita o role ai brother '")+arg+"' dado '"+data+"'").c_str());
-//  return Command::null_cmd();
-//}
-//
-//static Command handle_list (const string& arg, const string& data) {
-//  puts((string("Manda os brothers logado ai tio ")).c_str());
-//  return Command::null_cmd();
-//}
-//
-//static Command handle_exit (const string& arg, const string& data) {
-//  puts(string("ADEUS OTÁRIOS, EXITEI").c_str());
-//  return Command::null_cmd();
-//}
-//
-//static Command handle_accept (const string& arg, const string& data) {
-//  puts(string("Pode manda os role").c_str());
-//  return Command::null_cmd();
-//}
-//
-//static Command handle_refuse (const string& arg, const string& data) {
-//  puts(string("Quero sabe disso ai n tio, flwz").c_str());
-//  return Command::null_cmd();
-//}
-//
 void Prompt::init () {
   printf("> ");
   fflush(stdout);
@@ -82,6 +41,7 @@ bool Prompt::check_input () {
   stringstream tokens(line);
   stringstream msg;
   tokens >> cmd >> arg;
+  while (tokens.peek() == ' ') tokens.get();
   tokens.get(*msg.rdbuf());
   data = msg.str();
   run_cmd(cmd, arg, data);

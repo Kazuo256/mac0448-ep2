@@ -63,6 +63,16 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
         client->send(Command::msg_fail());
       }
       break;
+    case Command::SEND:
+      if (serverdata_->used(cmd.arg(0))) {
+        resp_connec = serverdata_->get_connection(cmd.arg(0));
+        sender = serverdata_->get_link(client->sockfd());
+        resp_connec->send(Command::send(sender, cmd.arg(1)));
+        client->send(Command::send_ok());
+      } else {
+        client->send(Command::send_fail());
+      }
+      break;
     default:
       response = cmd;
       break;
