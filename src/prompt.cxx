@@ -80,7 +80,10 @@ bool Prompt::check_input () {
     return false;
   }
   stringstream tokens(line);
-  tokens >> cmd >> arg >> data;
+  stringstream msg;
+  tokens >> cmd >> arg;
+  tokens.get(*msg.rdbuf());
+  data = msg.str();
   /* Escreve a linha lida no socket */
   run_cmd(cmd, arg, data);
   //server->send(check_cmd(cmd, arg, data));
