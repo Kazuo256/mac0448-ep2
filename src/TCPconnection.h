@@ -16,6 +16,7 @@ class TCPConnection : public Connection {
     TCPConnection (int sockfd);
     ~TCPConnection ();
     
+    // Overwritten methods
     void host (unsigned short port);
     Connection* accept ();
 
@@ -24,11 +25,14 @@ class TCPConnection : public Connection {
     Command receive ();
     void send (const Command& cmd);
 
+    // TCP-only methods
+    unsigned short local_port () const { return local_info_.sin_port; }
+    std::string local_address () const;
+
   private:
 
     struct sockaddr_in  local_info_,
                         remote_info_;
-    char                zero[32];
     std::string         remote_addr_;
 
 };

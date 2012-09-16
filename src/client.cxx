@@ -28,7 +28,7 @@ static string         hostname;
 static unsigned short port;
 static EventManager   manager;
 static Prompt         prompt;
-static TCPConnection  server_output, server_input;
+static TCPConnection  server_output, server_input, transfer;
 static int            ID = -1;
 
 // EVENTOS DE INPUT
@@ -152,16 +152,15 @@ static void transfer_event (const string& target, const string& filepath) {
     case Command::SEND_OK:
       transfer_pending = true;
       cout << "[Aguardando resposta do usuário '" << target << "']\n";
-      break;
+      return;
     case Command::SEND_FAIL:
-      current_file.close();
       cout << "[Failed to send file to '" << target << "']\n";
       break;
     default:
-      current_file.close();
       cout << "[Unexpected answer from server]\n";
       break;
   }
+  current_file.close();
 }
 
 // MAIN

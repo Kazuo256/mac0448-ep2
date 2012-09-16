@@ -112,8 +112,6 @@ Connection* TCPConnection::accept () {
 
 bool TCPConnection::connect (const string& hostname, unsigned short port) {
   int     dadosLocalLen;
-  char    enderecoLocal[MAXLINE + 1];
-
   /* Para uso com o gethostbyname */
   struct  hostent *hptr;
   char    enderecoIPServidor[INET_ADDRSTRLEN];
@@ -192,8 +190,7 @@ bool TCPConnection::connect (const string& hostname, unsigned short port) {
 
   printf(
     "Dados do socket local: (IP: %s, PORTA: %d)\n",
-    inet_ntop(AF_INET, &(local_info_.sin_addr).s_addr,enderecoLocal,
-              sizeof(enderecoLocal)),
+    local_address().c_str(),
     ntohs(local_info_.sin_port)
   );
   /***************************************/
@@ -220,6 +217,11 @@ void TCPConnection::send (const Command& cmd) {
   }
 }
 
+string TCPConnection::local_address () const {
+  char addr[INET_ADDRSTRLEN];
+  return
+    inet_ntop(AF_INET, &local_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
+}
 
 } // namespace ep2
 
