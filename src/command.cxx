@@ -1,10 +1,15 @@
 
 #include "command.h"
 
+#include <iostream>
+#include <algorithm>
+
 namespace ep2 {
 
 using std::string;
 using std::make_pair;
+using std::cout;
+using std::min;
 
 string Command::make_packet () const {
   string packet;
@@ -35,14 +40,26 @@ Command::operator string () const {
 }
 
 Command Command::from_packet (const string& packet) {
-  Command cmd(packet[0]);
-  if (!packet.size()) return disconnect();
-  if (packet[0] >= MAX_COMMAND) return Command(255);
-  for (size_t pos = 2, count = 0;
-       count < static_cast<size_t>(packet[1]) && pos < packet.size();
-       pos += packet[pos]+1, ++count)
-    cmd.data_.push_back(packet.substr(pos+1, packet[pos]));
+  return from_packet(packet.c_str(), packet.size());
+}
 
+Command Command::from_packet (const char* packet, size_t n) {
+  if (n <= 0) return disconnect();
+  if (packet[0] >= MAX_COMMAND) return Command(255);
+  Command cmd(packet[0]);
+  size_t args = static_cast<size_t>(packet[1]);
+  string packet_str(packet, packet+n);
+  for (size_t pos = 2, count = 0;
+       count < args && pos < n;
+       pos += packet[pos]+1, ++count) {
+    //size_t end = min(n, pos+1+packet[pos]);
+    //string arg;
+    //arg.assign(packet+pos+1, packet[pos]);
+    cmd.data_.push_back(
+      //string(packet+pos+1, packet+pos+1+packet[pos])
+      packet_str.substr(pos+1, packet[pos])
+    );
+  }
   return cmd;
 }
 
@@ -73,7 +90,8 @@ Command Command::list_request () {
 }
 
 Command Command::chunk (const string& data) {
-  return generic_cmd<CHUNK>(data);
+  Command chunk_cmd = generic_cmd<CHUNK>(data);
+  return chunk_cmd;
 }
 
 Command Command::accept (const string& sender) {
@@ -82,6 +100,10 @@ Command Command::accept (const string& sender) {
 
 Command Command::refuse (const string& sender) {
   return generic_cmd<REFUSE>(sender);
+}
+
+Command Command::cont () {
+  return Command(CONTINUE);
 }
 
 // Server Commands

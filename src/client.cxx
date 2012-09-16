@@ -33,7 +33,7 @@ static string                       hostname;
 static unsigned short               port;
 static EventManager                 manager;
 static Prompt                       prompt;
-static TCPConnection                server_output, server_input, transfer;
+static TCPConnection                server_output, server_input;
 static int                          ID = -1;
 static unordered_map<string,string> senders;
 
@@ -158,6 +158,7 @@ static void transfer_event (const string& target, const string& filepath) {
       if (response.num_args() < 2)
         cout << "[Resposta inesperada do servidor]\n";
       else {
+        TCPConnection transfer;
         unsigned short port = atoi(response.arg(1).c_str());
         cout << "[Enviando para " << response.arg(0) << ":" << port << "]\n";
         transfer.connect(response.arg(0), 8080);
@@ -168,6 +169,8 @@ static void transfer_event (const string& target, const string& filepath) {
           chunk[n] = '\0';
           cout << "[Enviando chunk de tamanho " << n << "]\n";
           transfer.send(Command::chunk(chunk));
+          Command check = transfer.receive();
+          if (check.opcode() != Command::CONTINUE) break;
         }
       }
       break;
@@ -219,15 +222,15 @@ static void accept_event (const string& sender, const string& unused) {
     Command bytes = download->receive();
     if (bytes.opcode() == Command::DISCONNECT) break;
     if (bytes.opcode() != Command::CHUNK) {
-      cout << "[Outro usuário enviou pacote desconhecido]\n";
+      cout << "[Outro usuário enviou pacote desconhecido "<<bytes.opcode()<<"]\n";
       break;
     }
-    cout << "::::: " << bytes.num_args() << "\n";
     if (bytes.num_args() < 1) {
       cout << "[Dados corrompidos?]\n";
       break;
     }
     file.write(bytes.arg(0).c_str(), bytes.arg(0).size());
+    download->send(Command::cont());
   }
   file.close();
   delete download;

@@ -207,12 +207,20 @@ Command TCPConnection::receive () {
 		exit(1);
 	}
   cmdline[n]=0;
-  return Command::from_packet(cmdline);
+  if (cmdline[0] == Command::CHUNK) {
+    cout << "RECEIVED CHUNK PACKET OF SIZE " << n << "\n";
+    cout << "ARGS " << (int)cmdline[1] << "\n";
+  }
+  return Command::from_packet(cmdline, n);
 }
 
 void TCPConnection::send (const Command& cmd) {
   string packet = cmd.make_packet();
   size_t size = packet.size();
+  if (cmd.opcode() == Command::CHUNK) {
+    cout << "SEND CHUNK OF SIZE " << cmd.num_args() << "\n";
+    cout << "PACKET: " << size << "\n";
+  }
   if (write(sockfd(), packet.c_str(), size) < 0) {
     perror("write error");
     exit(1);

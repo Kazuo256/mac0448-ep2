@@ -24,6 +24,7 @@ class Command {
                       CHUNK = 0x7,
                       ACCEPT = 0x8,
                       REFUSE = 0x9,
+                      CONTINUE = 0xA,
                       GIVE_ID = 0x11,
                       REFUSE_NICK = 0x12,
                       ACCEPT_NICK = 0x13,
@@ -43,6 +44,7 @@ class Command {
     operator std::string () const;
 
     static Command from_packet (const std::string& packet);
+    static Command from_packet (const char* packet, size_t n);
 
     static Command null_cmd () { return Command(0xff); }
 
@@ -56,6 +58,7 @@ class Command {
     static Command refuse (const std::string& sender);
     static Command list_request ();
     static Command chunk (const std::string& data);
+    static Command cont ();
 
     // Server Commands
     static Command give_id (const std::string& id);
