@@ -110,8 +110,12 @@ Command Command::msg_ok () {
   return Command(MSG_OK);
 }
 
-Command Command::send_fail () {
-  return Command(SEND_FAIL);
+Command Command::send_fail (const string& info) {
+  return generic_cmd<SEND_FAIL>(info);
+}
+
+Command Command::send_ok (const string& addr, const string& port) {
+  return generic_cmd<SEND_OK>(addr, port);
 }
 
 } // namespace ep2

@@ -64,21 +64,27 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
       }
       break;
     case Command::SEND:
+      sender = serverdata_->get_link(client->sockfd());
       if (serverdata_->used(cmd.arg(0))) {
         resp_connec = serverdata_->get_connection(cmd.arg(0));
-        sender = serverdata_->get_link(client->sockfd());
         resp_connec->send(Command::send(sender, cmd.arg(1)));
       } else {
-        client->send(Command::send_fail());
+        serverdata_->get_connection(sender)
+          ->send(Command::send_fail("Usuário não existe"));
       }
       break;
     case Command::ACCEPT:
+      if (serverdata_->used(cmd.arg(0))) {
+        resp_connec = serverdata_->get_connection(cmd.arg(0));
+        sender = serverdata_->get_link(client->sockfd());
+        resp_connec->send(Command::accept(sender));
+      }
       break;
     case Command::REFUSE:
       if (serverdata_->used(cmd.arg(0))) {
         resp_connec = serverdata_->get_connection(cmd.arg(0));
         sender = serverdata_->get_link(client->sockfd());
-        resp_connec->send(Command::refuse(sender));
+        resp_connec->send(Command::send_fail("Usuário recusou o arquivo"));
       }
       break;
     default:

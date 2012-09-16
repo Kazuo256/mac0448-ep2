@@ -154,7 +154,7 @@ static void transfer_event (const string& target, const string& filepath) {
   cout << "[Tentando enviar arquivo para o usuário '" << target << "']\n";
   Command response = server_output.receive();
   switch (response.opcode()) {
-    case Command::ACCEPT:
+    case Command::SEND_OK:
       if (response.num_args() < 2)
         cout << "[Resposta inesperada do servidor]\n";
       else {
@@ -169,13 +169,10 @@ static void transfer_event (const string& target, const string& filepath) {
         }
       }
       break;
-    case Command::REFUSE:
-      if (response.num_args() > 0 && target != response.arg(0))
-        cout << "[Hummmmm...]\n";
-      cout << "['" << target << "' recusou a transferência]\n";
-      break;
     case Command::SEND_FAIL:
-      cout << "[Falha ao enviar arquivo para '" << target << "']\n";
+      cout << "[Não foi possível enviar o arquivo para '" << target << "']\n";
+      if (response.num_args() > 0)
+        cout << "[" << response.arg(0) << "]\n";
       break;
     default:
       cout << "[Resposta inesperada do servidor]\n";

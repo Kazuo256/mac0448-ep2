@@ -31,7 +31,8 @@ class Command {
                       MSG_FAIL = 0x15,
                       MSG_OK = 0x16,
                       SEND_FAIL = 0x17,
-                      MAX_COMMAND = 0x18;
+                      SEND_OK = 0x18,
+                      MAX_COMMAND = 0x19;
 
     byte opcode () const { return opcode_; }
     std::string arg (size_t idx) const { return data_[idx]; }
@@ -63,7 +64,8 @@ class Command {
     static Command list_response (const ArgList& arg_list);
     static Command msg_ok ();
     static Command msg_fail ();
-    static Command send_fail ();
+    static Command send_fail (const std::string& info);
+    static Command send_ok (const std::string& addr, const std::string& port);
 
   private:
 
