@@ -229,7 +229,9 @@ static void accept_event (const string& sender, const string& unused) {
       cout << "[Dados corrompidos?]\n";
       break;
     }
-    file.write(bytes.arg(0).c_str(), bytes.arg(0).size());
+    //file.write(bytes.arg(0).c_str(), bytes.arg(0).size());
+    file << bytes.arg(0);
+    file.seekp(0, ios_base::end);
     download->send(Command::cont());
   }
   file.close();
