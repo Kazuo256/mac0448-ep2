@@ -160,13 +160,15 @@ static void transfer_event (const string& target, const string& filepath) {
       else {
         unsigned short port = atoi(response.arg(1).c_str());
         cout << "[Enviando para " << response.arg(0) << ":" << port << "]\n";
-        //transfer.connect(response.arg(0), port);
-        //char chunk[2048+1];
-        //while (current_file.good()) {
-        //  current_file.read(chunk, 2048);
-        //  chunk[current_file.gcount()] = '\0';
-        //  transfer.send(Command::chunk(chunk));
-        //}
+        transfer.connect(response.arg(0), 8080);
+        char chunk[2048+1];
+        while (current_file.good()) {
+          current_file.read(chunk, 2048);
+          size_t n = current_file.gcount();
+          chunk[n] = '\0';
+          cout << "[Enviando chunk de tamanho " << n << "]\n";
+          transfer.send(Command::chunk(chunk));
+        }
       }
       break;
     case Command::SEND_FAIL:
@@ -208,26 +210,27 @@ static void accept_event (const string& sender, const string& unused) {
     return;
   }
   server_input.send(Command::accept(sender));
-  //TCPConnection temp;
-  //temp.host(server_input.local_port());
-  //Connection *download = temp.accept();
-  //ofstream file((string("downloads/")+it->second).c_str(),
-  //              ios_base::out | ios_base::binary);
-  //while (true) {
-  //  Command bytes = download->receive();
-  //  if (bytes.opcode() == Command::DISCONNECT) break;
-  //  if (bytes.opcode() != Command::CHUNK) {
-  //    cout << "[Outro usuário enviou pacote desconhecido]\n";
-  //    break;
-  //  }
-  //  if (bytes.num_args() < 1) {
-  //    cout << "[Dados corrompidos?]\n";
-  //    break;
-  //  }
-  //  file.write(bytes.arg(0).c_str(), bytes.arg(0).size());
-  //}
-  //file.close();
-  //delete download;
+  TCPConnection temp;
+  temp.host(8080);
+  Connection *download = temp.accept();
+  ofstream file((string("downloads/")+it->second).c_str(),
+                ios_base::out | ios_base::binary);
+  while (true) {
+    Command bytes = download->receive();
+    if (bytes.opcode() == Command::DISCONNECT) break;
+    if (bytes.opcode() != Command::CHUNK) {
+      cout << "[Outro usuário enviou pacote desconhecido]\n";
+      break;
+    }
+    cout << "::::: " << bytes.num_args() << "\n";
+    if (bytes.num_args() < 1) {
+      cout << "[Dados corrompidos?]\n";
+      break;
+    }
+    file.write(bytes.arg(0).c_str(), bytes.arg(0).size());
+  }
+  file.close();
+  delete download;
   senders.erase(sender);
 }
 
