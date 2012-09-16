@@ -21,6 +21,9 @@ class Command {
                       MSG = 0x4,
                       LIST_REQUEST = 0x5,
                       SEND = 0x6,
+                      CHUNK = 0x7,
+                      ACCEPT = 0x8,
+                      REFUSE = 0x9,
                       GIVE_ID = 0x11,
                       REFUSE_NICK = 0x12,
                       ACCEPT_NICK = 0x13,
@@ -28,8 +31,7 @@ class Command {
                       MSG_FAIL = 0x15,
                       MSG_OK = 0x16,
                       SEND_FAIL = 0x17,
-                      SEND_OK = 0x18,
-                      MAX_COMMAND = 0x19;
+                      MAX_COMMAND = 0x18;
 
     byte opcode () const { return opcode_; }
     std::string arg (size_t idx) const { return data_[idx]; }
@@ -49,9 +51,10 @@ class Command {
     static Command msg (const std::string& name, const std::string& msg);
     static Command disconnect ();
     static Command send (const std::string& name, const std::string& path);
-    static Command accept (const std::string& name, const std::string& file);
-    static Command refuse (const std::string& name, const std::string& file);
+    static Command accept (const std::string& sender);
+    static Command refuse (const std::string& sender);
     static Command list_request ();
+    static Command chunk (const std::string& data);
 
     // Server Commands
     static Command give_id (const std::string& id);
@@ -60,7 +63,6 @@ class Command {
     static Command list_response (const ArgList& arg_list);
     static Command msg_ok ();
     static Command msg_fail ();
-    static Command send_ok ();
     static Command send_fail ();
 
   private:

@@ -28,6 +28,8 @@ class TCPConnection : public Connection {
     // TCP-only methods
     unsigned short local_port () const { return local_info_.sin_port; }
     std::string local_address () const;
+    unsigned short remote_port () const { return remote_info_.sin_port; }
+    std::string remote_address () const;
 
   private:
 

@@ -72,6 +72,18 @@ Command Command::list_request () {
   return Command(LIST_REQUEST, ArgList());
 }
 
+Command Command::chunk (const string& data) {
+  return generic_cmd<CHUNK>(data);
+}
+
+Command Command::accept (const string& sender) {
+  return generic_cmd<ACCEPT>(sender);
+}
+
+Command Command::refuse (const string& sender) {
+  return generic_cmd<REFUSE>(sender);
+}
+
 // Server Commands
 
 Command Command::give_id (const string& id) {
@@ -100,10 +112,6 @@ Command Command::msg_ok () {
 
 Command Command::send_fail () {
   return Command(SEND_FAIL);
-}
-
-Command Command::send_ok () {
-  return Command(SEND_OK);
 }
 
 } // namespace ep2

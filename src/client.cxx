@@ -5,8 +5,10 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <tr1/unordered_map>
 
 #include "prompt.h"
+#include "connection.h"
 #include "TCPconnection.h"
 #include "eventmanager.h"
 #include "command.h"
@@ -16,20 +18,24 @@
 using std::string;
 using std::stringstream;
 using std::ifstream;
+using std::ofstream;
 using std::ios_base;
 using std::cout;
+using std::tr1::unordered_map;
 
 using ep2::Prompt;
+using ep2::Connection;
 using ep2::TCPConnection;
 using ep2::EventManager;
 using ep2::Command;
 
-static string         hostname;
-static unsigned short port;
-static EventManager   manager;
-static Prompt         prompt;
-static TCPConnection  server_output, server_input, transfer;
-static int            ID = -1;
+static string                       hostname;
+static unsigned short               port;
+static EventManager                 manager;
+static Prompt                       prompt;
+static TCPConnection                server_output, server_input, transfer;
+static int                          ID = -1;
+static unordered_map<string,string> senders;
 
 // EVENTOS DE INPUT
 
@@ -58,6 +64,7 @@ static EventManager::Status server_event () {
       if (cmd.num_args() < 2)
         cout << "\n[Bad send command from server]\n";
       else {
+        senders[cmd.arg(0)] = cmd.arg(1);
         cout << "\n['" << cmd.arg(0) << "' wants to send file '" << cmd.arg(1) << "']";
         cout << "\n[To accept it use '/accept <user>']";
         cout << "\n> ";
@@ -72,7 +79,6 @@ static EventManager::Status server_event () {
 
 static bool     secondary_connected = false;
 static string   current_nick = "";
-static bool     transfer_pending = false;
 static ifstream current_file;
 
 static void nick_event (const string& nick, const string& unused) {
@@ -139,28 +145,112 @@ static void transfer_event (const string& target, const string& filepath) {
     cout << "[Usuário alvo ou arquivo a ser enviado não definidos]\n";
     return;
   }
-  if (transfer_pending)
-    cout << "[Já há uma transferência em execução]\n";
   current_file.open(filepath.c_str(), ios_base::in | ios_base::binary);
   if (current_file.fail()) {
     cout << "[Não foi possível acessar o arquivo '" << filepath << "']\n";
     return;
   }
   server_input.send(Command::send(target, filepath));
-  Command response = server_input.receive();
+  cout << "[Tentando enviar arquivo para o usuário '" << target << "']\n";
+  Command response = server_output.receive();
   switch (response.opcode()) {
-    case Command::SEND_OK:
-      transfer_pending = true;
-      cout << "[Aguardando resposta do usuário '" << target << "']\n";
-      return;
+    case Command::ACCEPT:
+      if (response.num_args() < 2)
+        cout << "[Resposta inesperada do servidor]\n";
+      else {
+        unsigned short port = atoi(response.arg(1).c_str());
+        cout << "[Enviando para " << response.arg(0) << ":" << port << "]\n";
+        transfer.connect(response.arg(0), port);
+        char chunk[2048+1];
+        while (current_file.good()) {
+          current_file.read(chunk, 2048);
+          chunk[current_file.gcount()] = '\0';
+          transfer.send(Command::chunk(chunk));
+        }
+      }
+      break;
+    case Command::REFUSE:
+      if (response.num_args() > 0 && target != response.arg(0))
+        cout << "[Hummmmm...]\n";
+      cout << "['" << target << "' recusou a transferência]\n";
+      break;
     case Command::SEND_FAIL:
-      cout << "[Failed to send file to '" << target << "']\n";
+      cout << "[Falha ao enviar arquivo para '" << target << "']\n";
       break;
     default:
-      cout << "[Unexpected answer from server]\n";
+      cout << "[Resposta inesperada do servidor]\n";
       break;
   }
   current_file.close();
+}
+
+static void show_senders () {
+  unordered_map<string,string>::iterator it;
+  if (senders.empty())
+    cout << "[No momento, ninguém está tentando te enviar nenhum arquivo]\n";
+  else {
+    cout << "[Usuários tentando te enviar arquivos no momento:]\n";
+    for (it = senders.begin(); it != senders.end(); ++it)
+      cout << "  " << it->first << ": "<< it->second << "\n";
+  }
+}
+
+static void accept_event (const string& sender, const string& unused) {
+  if (current_nick.empty()) {
+    cout << "[Você não pode receber arquivos sem um nick!]\n";
+    return;
+  }
+  unordered_map<string,string>::iterator it;
+  if (sender.empty()) {
+    cout << "[Especifique de quem quer aceitar o arquivo]\n";
+    show_senders();
+    return;
+  }
+  if ((it = senders.find(sender)) == senders.end()) {
+    cout << "[Nenhuma transferência pendente de '" << sender << "']\n";
+    return;
+  }
+  server_input.send(Command::accept(sender));
+  TCPConnection temp;
+  temp.host(server_input.local_port());
+  Connection *download = temp.accept();
+  ofstream file((string("downloads/")+it->second).c_str(),
+                ios_base::out | ios_base::binary);
+  while (true) {
+    Command bytes = download->receive();
+    if (bytes.opcode() == Command::DISCONNECT) break;
+    if (bytes.opcode() != Command::CHUNK) {
+      cout << "[Outro usuário enviou pacote desconhecido]\n";
+      break;
+    }
+    if (bytes.num_args() < 1) {
+      cout << "[Dados corrompidos?]\n";
+      break;
+    }
+    file.write(bytes.arg(0).c_str(), bytes.arg(0).size());
+  }
+  file.close();
+  delete download;
+  senders.erase(sender);
+}
+
+static void refuse_event (const string& sender, const string& unused) {
+  if (current_nick.empty()) {
+    cout << "[Você não pode recusar arquivos sem um nick!]\n";
+    return;
+  }
+  unordered_map<string,string>::iterator it;
+  if (sender.empty()) {
+    cout << "[Especifique de quem quer recusar o arquivo]\n";
+    show_senders();
+    return;
+  }
+  if ((it = senders.find(sender)) == senders.end()) {
+    cout << "[Nenhuma transferência pendente de '" << sender << "']\n";
+    return;
+  }
+  server_input.send(Command::refuse(sender));
+  senders.erase(sender);
 }
 
 // MAIN
@@ -189,6 +279,8 @@ int main(int argc, char **argv) {
   prompt.add_command("/list", list_event);
   prompt.add_command("/msg", msg_event);
   prompt.add_command("/send", transfer_event);
+  prompt.add_command("/accept", accept_event);
+  prompt.add_command("/refuse", refuse_event);
   manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
   manager.loop();
   if (current_file.is_open()) current_file.close();

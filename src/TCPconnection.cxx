@@ -223,5 +223,12 @@ string TCPConnection::local_address () const {
     inet_ntop(AF_INET, &local_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
 }
 
+string TCPConnection::remote_address () const {
+  char addr[INET_ADDRSTRLEN];
+  return
+    inet_ntop(AF_INET, &remote_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
+}
+
+
 } // namespace ep2
 

@@ -68,9 +68,17 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
         resp_connec = serverdata_->get_connection(cmd.arg(0));
         sender = serverdata_->get_link(client->sockfd());
         resp_connec->send(Command::send(sender, cmd.arg(1)));
-        client->send(Command::send_ok());
       } else {
         client->send(Command::send_fail());
+      }
+      break;
+    case Command::ACCEPT:
+      break;
+    case Command::REFUSE:
+      if (serverdata_->used(cmd.arg(0))) {
+        resp_connec = serverdata_->get_connection(cmd.arg(0));
+        sender = serverdata_->get_link(client->sockfd());
+        resp_connec->send(Command::refuse(sender));
       }
       break;
     default:
