@@ -23,10 +23,11 @@ ServerHandler::ServerHandler (ServerData* serverdata) :
 
 void ServerHandler::handle (Connection *client, const Command& cmd) {
   cout << static_cast<string>(cmd) << "\n";
+  int id = -1;
   Command response = Command::null_cmd();
   Command::ArgList arg_list;
   Connection* resp_connec;
-  string sender;
+  string sender, oldnick;
   stringstream args;
   switch(cmd.opcode()) {
     case Command::REQUEST_ID:
@@ -37,8 +38,14 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
       if (serverdata_->used(cmd.arg(0))) {
 		    client->send(Command::refuse_nick());
       } else {
+        id = atoi(cmd.arg(1).c_str());
+        oldnick = serverdata_->get_link(id);
+        if (oldnick.size()) {
+          serverdata_->erase_user(oldnick);
+          serverdata_->remove_link(id);
+        }
         serverdata_->set_user(cmd.arg(0), client);
-        serverdata_->link_connections(atoi(cmd.arg(1).c_str()), cmd.arg(0));
+        serverdata_->link_connections(id, cmd.arg(0));
         client->send(Command::accept_nick());
       }
       break;

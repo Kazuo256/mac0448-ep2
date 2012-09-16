@@ -38,13 +38,14 @@ static EventManager::Status prompt_event () {
 
 static EventManager::Status server_event () {
   Command cmd = server_output.receive();
-  cout << "Received command: " << static_cast<string>(cmd) << "\n";
+  cout << "\n[Received command: " << static_cast<string>(cmd) << "]";
   if (cmd.opcode() == Command::MSG) {
     if (cmd.num_args() < 2)
-      cout << "[Bad message from server]\n";
+      cout << "\n[Bad message from server]\n";
     else {
-      cout << "[Message from '" << cmd.arg(0) << "':] ";
-      cout << cmd.arg(1) << "\n";
+      cout << "\n[Message from '" << cmd.arg(0) << "':] ";
+      cout << cmd.arg(1) << "\n> ";
+      cout.flush();
     }
   }
   return EventManager::CONTINUE;
