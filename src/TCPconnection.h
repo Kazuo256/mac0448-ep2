@@ -25,10 +25,9 @@ class TCPConnection : public Connection {
     Command receive ();
     void send (const Command& cmd);
 
-    // TCP-only methods
-    unsigned short local_port () const { return local_info_.sin_port; }
+    unsigned short local_port () const;
     std::string local_address () const;
-    unsigned short remote_port () const { return remote_info_.sin_port; }
+    unsigned short remote_port () const;
     std::string remote_address () const;
 
   private:

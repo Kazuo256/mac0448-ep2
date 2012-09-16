@@ -69,15 +69,19 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
         resp_connec = serverdata_->get_connection(cmd.arg(0));
         resp_connec->send(Command::send(sender, cmd.arg(1)));
       } else {
-        serverdata_->get_connection(sender)
-          ->send(Command::send_fail("Usuário não existe"));
+        resp_connec = serverdata_->get_connection(sender);
+        if (resp_connec)
+          resp_connec->send(Command::send_fail("Usuário não existe"));
       }
       break;
     case Command::ACCEPT:
       if (serverdata_->used(cmd.arg(0))) {
         resp_connec = serverdata_->get_connection(cmd.arg(0));
         sender = serverdata_->get_link(client->sockfd());
-        resp_connec->send(Command::accept(sender));
+        stringstream port;
+        port << client->remote_port();
+        cout << "PORTA " << port.str() << "/" << client->remote_port() << "\n";
+        resp_connec->send(Command::send_ok(client->remote_address(), port.str()));
       }
       break;
     case Command::REFUSE:

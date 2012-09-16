@@ -15,6 +15,7 @@
 #include <poll.h>
 
 #include <string>
+#include <iostream>
 
 #include "command.h"
 #include "serverhandler.h"
@@ -26,6 +27,7 @@
 namespace ep2 {
 
 using std::string;
+using std::cout;
 
 /*
  *  struct sockaddr {
@@ -95,7 +97,7 @@ Connection* TCPConnection::accept () {
 		exit(1);
   }
   /* Imprimindo os dados do socket remoto */
-  printf("Dados do socket remoto: (IP: %s, PORTA: %d conectou)\n",
+  printf("[Dados do socket remoto: (IP: %s, PORTA: %d conectou)]\n",
          inet_ntop(
            AF_INET,
            &(remote_info.sin_addr).s_addr,
@@ -217,10 +219,18 @@ void TCPConnection::send (const Command& cmd) {
   }
 }
 
+unsigned short TCPConnection::local_port () const {
+  return ntohs(local_info_.sin_port);
+}
+
 string TCPConnection::local_address () const {
   char addr[INET_ADDRSTRLEN];
   return
     inet_ntop(AF_INET, &local_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
+}
+
+unsigned short TCPConnection::remote_port () const {
+  return ntohs(remote_info_.sin_port);
 }
 
 string TCPConnection::remote_address () const {

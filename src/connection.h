@@ -31,6 +31,10 @@ class Connection {
     // Either side methods
     virtual Command receive () = 0;
     virtual void send (const Command& cmd) = 0;
+    virtual unsigned short local_port () const = 0;
+    virtual std::string local_address () const = 0;
+    virtual unsigned short remote_port () const = 0;
+    virtual std::string remote_address () const = 0;
 
   protected:
 
