@@ -21,9 +21,9 @@ string Command::make_packet () const {
     cout << "make chunk packet args " << (size_t)packet[1] << "\n";
   for (ArgList::const_iterator it = data_.begin(); it != data_.end(); ++it) {
     packet += static_cast<byte>(it->size());
-    packet += *it;
     if (opcode_ == CHUNK)
-      cout << it->size() << " ";
+      cout << (size_t)(byte)packet[packet.size()-1] << " ";
+    packet += *it;
   }
   cout << "\n";
   packet += '\n';
@@ -61,14 +61,15 @@ Command Command::from_packet (const char* packet, size_t n) {
     cout << "from chunk packet args " << (size_t)size << "\n";
   for (size_t pos = 2, count = 0;
        count < args && pos < n;
-       pos += packet[pos]+1, ++count) {
-    byte size = packet[pos];
+       pos += size, ++pos, ++count) {
+    size = packet[pos];
     cmd.data_.push_back(
       packet_str.substr(pos+1, size)
     );
     if (cmd.opcode_ == CHUNK) {
-      cout << (size_t)(byte)packet[pos] << " ";
-      cout << cmd.data_.back().size() << " ";
+      cout << "[" << pos << "->" << (pos+size+1u) << "]";
+      //cout << cmd.data_.back().size() << " ";
+      cout << (size_t)size << " ";
     }
   }
   cout << "\n";

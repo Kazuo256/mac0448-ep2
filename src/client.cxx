@@ -162,9 +162,9 @@ static void transfer_event (const string& target, const string& filepath) {
         unsigned short port = atoi(response.arg(1).c_str());
         cout << "[Enviando para " << response.arg(0) << ":" << port << "]\n";
         transfer.connect(response.arg(0), 8080);
-        char chunk[2048+1];
+        char chunk[8*255+1];
         while (current_file.good()) {
-          current_file.read(chunk, 2048);
+          current_file.read(chunk, 8*255);
           size_t n = current_file.gcount();
           chunk[n] = '\0';
           cout << "[Enviando chunk de tamanho " << n << "]\n";
