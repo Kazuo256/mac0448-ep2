@@ -230,8 +230,8 @@ static void accept_event (const string& sender, const string& unused) {
       break;
     }
     //file.write(bytes.arg(0).c_str(), bytes.arg(0).size());
+    if (bytes.arg(0).empty()) cout << "WAT\n";
     file << bytes.arg(0);
-    file.seekp(0, ios_base::end);
     download->send(Command::cont());
   }
   file.close();

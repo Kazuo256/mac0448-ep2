@@ -52,11 +52,7 @@ Command Command::from_packet (const char* packet, size_t n) {
   for (size_t pos = 2, count = 0;
        count < args && pos < n;
        pos += packet[pos]+1, ++count) {
-    //size_t end = min(n, pos+1+packet[pos]);
-    //string arg;
-    //arg.assign(packet+pos+1, packet[pos]);
     cmd.data_.push_back(
-      //string(packet+pos+1, packet+pos+1+packet[pos])
       packet_str.substr(pos+1, packet[pos])
     );
   }
