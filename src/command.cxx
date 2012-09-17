@@ -2,11 +2,13 @@
 #include "command.h"
 
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 
 namespace ep2 {
 
 using std::string;
+using std::stringstream;
 using std::make_pair;
 using std::cout;
 using std::min;
@@ -14,11 +16,16 @@ using std::min;
 string Command::make_packet () const {
   string packet;
   packet += opcode_;
-  packet += data_.size();
+  packet += static_cast<byte>(data_.size());
+  if (opcode_ == CHUNK)
+    cout << "make chunk packet args " << (size_t)packet[1] << "\n";
   for (ArgList::const_iterator it = data_.begin(); it != data_.end(); ++it) {
     packet += static_cast<byte>(it->size());
     packet += *it;
+    if (opcode_ == CHUNK)
+      cout << it->size() << " ";
   }
+  cout << "\n";
   packet += '\n';
   return packet;
 }
@@ -49,13 +56,22 @@ Command Command::from_packet (const char* packet, size_t n) {
   Command cmd(packet[0]);
   size_t args = static_cast<size_t>(packet[1]);
   string packet_str(packet, packet+n);
+  byte size = packet[1];
+  if (cmd.opcode_ == CHUNK)
+    cout << "from chunk packet args " << (size_t)size << "\n";
   for (size_t pos = 2, count = 0;
        count < args && pos < n;
        pos += packet[pos]+1, ++count) {
+    byte size = packet[pos];
     cmd.data_.push_back(
-      packet_str.substr(pos+1, packet[pos])
+      packet_str.substr(pos+1, size)
     );
+    if (cmd.opcode_ == CHUNK) {
+      cout << (size_t)(byte)packet[pos] << " ";
+      cout << cmd.data_.back().size() << " ";
+    }
   }
+  cout << "\n";
   return cmd;
 }
 
@@ -86,8 +102,17 @@ Command Command::list_request () {
 }
 
 Command Command::chunk (const string& data) {
-  Command chunk_cmd = generic_cmd<CHUNK>(data);
-  return chunk_cmd;
+  Command cmd(CHUNK);
+  stringstream args(data);
+  int size = data.size();
+  char buffer[255+1];
+  for (int count = size; count > 0; count -= 255) {
+    args.read(buffer, 255);
+    size_t n = args.gcount();
+    cout << "subchunk size " << n << "\n";
+    cmd.data_.push_back(string(buffer, n));
+  }
+  return cmd;
 }
 
 Command Command::accept (const string& sender) {
