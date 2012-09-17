@@ -10,22 +10,16 @@ namespace ep2 {
 using std::string;
 using std::stringstream;
 using std::make_pair;
-using std::cout;
 using std::min;
 
 string Command::make_packet () const {
   string packet;
   packet += opcode_;
   packet += static_cast<byte>(data_.size());
-  if (opcode_ == CHUNK)
-    cout << "make chunk packet args " << (size_t)packet[1] << "\n";
   for (ArgList::const_iterator it = data_.begin(); it != data_.end(); ++it) {
     packet += static_cast<byte>(it->size());
-    if (opcode_ == CHUNK)
-      cout << (size_t)(byte)packet[packet.size()-1] << " ";
     packet += *it;
   }
-  cout << "\n";
   packet += '\n';
   return packet;
 }
@@ -56,9 +50,7 @@ Command Command::from_packet (const char* packet, size_t n) {
   Command cmd(packet[0]);
   size_t args = static_cast<size_t>(packet[1]);
   string packet_str(packet, packet+n);
-  byte size = packet[1];
-  if (cmd.opcode_ == CHUNK)
-    cout << "from chunk packet args " << (size_t)size << "\n";
+  byte size = 0;
   for (size_t pos = 2, count = 0;
        count < args && pos < n;
        pos += size, ++pos, ++count) {
@@ -66,13 +58,7 @@ Command Command::from_packet (const char* packet, size_t n) {
     cmd.data_.push_back(
       packet_str.substr(pos+1, size)
     );
-    if (cmd.opcode_ == CHUNK) {
-      cout << "[" << pos << "->" << (pos+size+1u) << "]";
-      //cout << cmd.data_.back().size() << " ";
-      cout << (size_t)size << " ";
-    }
   }
-  cout << "\n";
   return cmd;
 }
 
@@ -110,7 +96,6 @@ Command Command::chunk (const string& data) {
   for (int count = size; count > 0; count -= 255) {
     args.read(buffer, 255);
     size_t n = args.gcount();
-    cout << "subchunk size " << n << "\n";
     cmd.data_.push_back(string(buffer, n));
   }
   return cmd;

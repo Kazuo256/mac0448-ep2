@@ -229,14 +229,11 @@ static void accept_event (const string& sender, const string& unused) {
       cout << "[Dados corrompidos?]\n";
       break;
     }
-    //file.write(bytes.arg(0).c_str(), bytes.arg(0).size());
-    if (bytes.arg(0).empty()) cout << "WAT\n";
-    for (size_t i = 0; i < bytes.num_args(); ++i) {
-      cout << "writing " << bytes.arg(i).size() << " to file\n";
+    for (size_t i = 0; i < bytes.num_args(); ++i)
       file << bytes.arg(i);
-    }
     download->send(Command::cont());
   }
+  cout << "[Arquivo recebido com sucesso]\n";
   file.close();
   delete download;
   senders.erase(sender);
