@@ -117,32 +117,7 @@ bool TCPConnection::connect (const string& hostname, unsigned short port) {
   /* Para uso com o gethostbyname */
   struct  hostent *hptr;
   char    enderecoIPServidor[INET_ADDRSTRLEN];
-  /* Resolvendo o nome passado na linha de comando.
-  * Sobre o funcionamento: o gethostbyname faz uma busca pelo nome
-  * acessando os registros locais do SO (/etc/hosts por exemplo) e
-  * depois o servidor DNS. No caso do DNS ele faz uma busca por
-  * registros do tipo "A". Ao encontrar ele retorna as informações
-  * em uma struct hostent que tem este formato:
-  *
-  * struct hostent {
-  *     char  *h_name;        -- official (canonical) name of host 
-  *     char **h_aliases;     -- pointer to array of pointers to alias names
-  *     int    h_addrtype;    -- host address type: AF_INET 
-  *     int    h_length;      -- length of address: 4 
-  *     char **h_addr_list;   -- ptr to array of ptrs with IPv4 addrs 
-  * };
-  *
-  * Em caso de erro (retorno NULL da função), o inteiro h_errno é modificado com
-  * os valores:
-  *
-  * HOST_NOT_FOUND
-  * TRY_AGAIN
-  * NO_RECOVERY
-  * NO_DATA
-  * s
-  * A função hstrerror pode ser usada para interpretar o conteúdo do
-  * h_errno.
-  */
+
   if ( (hptr = gethostbyname(hostname.c_str())) == NULL) {
     fprintf(stderr,"gethostbyname :(\n");
     exit(1);

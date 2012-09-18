@@ -10,6 +10,8 @@ set (
   src/command.h
   src/TCPconnection.cxx
   src/TCPconnection.h
+  src/UDPconnection.cxx
+  src/UDPconnection.h
   src/connection.h
   src/commandhandler.h
   src/eventmanager.cxx
