@@ -6,6 +6,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+
+#include "command.h"
 
 #define MAXLINE 4096
 
@@ -47,12 +50,13 @@ Connection* UDPConnection::accept () {
 	char                enderecoRemoto[INET_ADDRSTRLEN];
   char                recvline[MAXLINE+1];
 
+  puts("[Aceitando conexão UDP]");
   n = recvfrom(sockfd(), recvline, MAXLINE, 0, (struct sockaddr*)&remote_info,
                (socklen_t*)&remote_info_size);
   recvline[n] = '\0';
   printf("[UDP connection request: %s]\n", recvline);
   /* Imprimindo os dados do socket remoto */
-  printf("[Dados do socket remoto: (IP: %s, PORTA: %d conectou)]\n",
+  printf("[Dados do socket remoto: (IP: %s, PORTA: %d)]\n",
          inet_ntop(
            AF_INET,
            &(remote_info.sin_addr).s_addr,
@@ -64,8 +68,8 @@ Connection* UDPConnection::accept () {
   accepted->local_info_  = local_info_;
   accepted->remote_info_ = remote_info;
   accepted->remote_addr_ = enderecoRemoto;
-  if (::connect(accepted->sockfd(), (struct sockaddr*)&accepted->local_info_,
-                sizeof(accepted->local_info_)) < 0) {
+  if (::connect(accepted->sockfd(), (struct sockaddr*)&accepted->remote_info_,
+                sizeof(accepted->remote_info_)) < 0) {
 		perror("connect error");
     delete accepted;
 		exit(1);
@@ -75,13 +79,15 @@ Connection* UDPConnection::accept () {
     delete accepted;
     exit(1);
   }
+  puts("[UDP conectou]");
   return accepted;
 }
 
 bool UDPConnection::connect (const string& hostname, unsigned short port) {
   /* Para uso com o gethostbyname */
-  struct  hostent *hptr;
-  char    enderecoIPServidor[INET_ADDRSTRLEN];
+  struct    hostent *hptr;
+  socklen_t dadosLocalLen;
+  char      enderecoIPServidor[INET_ADDRSTRLEN];
 
   if ( (hptr = gethostbyname(hostname.c_str())) == NULL) {
     fprintf(stderr,"gethostbyname :(\n");
@@ -102,21 +108,87 @@ bool UDPConnection::connect (const string& hostname, unsigned short port) {
 
   /* A partir deste ponto o endereço IP do servidor estará na string
   * enderecoIPServidor */
-  printf("[Conectando no servidor no IP %s]\n",enderecoIPServidor);
-  printf("[o comando 'exit' encerra a conexão]\n");
+  printf("[Conectando no IP %s]\n",enderecoIPServidor);
 
-	bzero(&remote_info_, sizeof(remote_info_));
   dadosLocalLen=sizeof(local_info_);
-  bzero(&local_info_, dadosLocalLen);
 	remote_info_.sin_family = AF_INET;
 	remote_info_.sin_port   = htons(port);
 
-  /* O endereço IP passado para a função é o que foi retornado na gethostbyname */
+  // O endereço IP passado para a função é o que foi retornado na gethostbyname
 	if (inet_pton(AF_INET, enderecoIPServidor, &remote_info_.sin_addr) <= 0) {
 		perror("inet_pton error");
 		exit(1);
 	}
-  return false;
+
+	if (::connect(sockfd(), (struct sockaddr*)&remote_info_,
+                sizeof(remote_info_)) < 0) {
+		perror("connect error");
+		exit(1);
+	}
+
+  /* Imprimindo os dados do socket local */
+  if (getsockname(sockfd(), (struct sockaddr*)&local_info_,
+                  (socklen_t*)&dadosLocalLen)) {
+  	perror("getsockname error");
+  	exit(1);
+  }
+
+  printf(
+    "Dados do socket local: (IP: %s, PORTA: %d)\n",
+    local_address().c_str(),
+    ntohs(local_info_.sin_port)
+  );
+
+  if (::send(sockfd(), "connect_me", sizeof "connect_me", 0) < 0) {
+    perror("connect request error");
+    exit(1);
+  }
+  printf("[Enviou pedido de conexão]\n");
+
+  char      recvline[MAXLINE+1];
+  ssize_t   n;
+  socklen_t remote_len = sizeof(remote_info_);
+  n = recvfrom(sockfd(), recvline, MAXLINE, 0, (struct sockaddr*)&remote_info_,
+               (socklen_t*)&remote_len);
+  recvline[n] = '\0';
+
+  printf("[UDP connection response: %s]\n", recvline);
+
+	if (::connect(sockfd(), (struct sockaddr*)&remote_info_,
+              sizeof(remote_info_)) < 0) {
+		perror("connect 2 error");
+		exit(1);
+	}
+
+  return true;
+}
+
+Command UDPConnection::receive() {
+  return Command::disconnect();
+}
+
+void UDPConnection::send (const Command& cmd) {
+  
+}
+
+unsigned short UDPConnection::local_port () const {
+  return ntohs(local_info_.sin_port);
+}
+
+string UDPConnection::local_address () const {
+  char addr[INET_ADDRSTRLEN];
+  return
+    inet_ntop(AF_INET, &local_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
+}
+
+unsigned short UDPConnection::remote_port () const {
+  return ntohs(remote_info_.sin_port);
+}
+
+string UDPConnection::remote_address () const {
+  char addr[INET_ADDRSTRLEN];
+  return
+    inet_ntop(AF_INET, &remote_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
 }
 
 } // namespace ep2

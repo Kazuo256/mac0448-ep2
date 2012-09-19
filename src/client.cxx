@@ -1,6 +1,7 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -10,6 +11,7 @@
 #include "prompt.h"
 #include "connection.h"
 #include "TCPconnection.h"
+#include "UDPconnection.h"
 #include "eventmanager.h"
 #include "command.h"
 
@@ -26,6 +28,7 @@ using std::tr1::unordered_map;
 using ep2::Prompt;
 using ep2::Connection;
 using ep2::TCPConnection;
+using ep2::UDPConnection;
 using ep2::EventManager;
 using ep2::Command;
 
@@ -262,33 +265,37 @@ static void refuse_event (const string& sender, const string& unused) {
 
 int main(int argc, char **argv) {
 
-	if (argc != 3) {
-      fprintf(stderr,"Uso: %s <Endereco IP|Nome> <Porta>\n",argv[0]);
+	if (argc < 3 || argc > 4) {
+      fprintf(stderr,"Uso: %s <Endereco IP|Nome> <Porta> [tcp|udp]\n",argv[0]);
 		exit(1);
 	}
   
   hostname = argv[1];
   port = atoi(argv[2]);
-
-  // Conexão primária
-  server_input.connect(hostname, port);
-  // Pede ID
-  server_input.send(Command::request_id());
-  Command cmd = server_input.receive();
-  if (cmd.opcode() == Command::GIVE_ID)
-    ID = atoi(cmd.arg(0).c_str());
-  printf("Recebido ID %d\n", ID);
-  // Prepara e entra em loop
-  prompt.init();
-  prompt.add_command("/nick", nick_event);
-  prompt.add_command("/list", list_event);
-  prompt.add_command("/msg", msg_event);
-  prompt.add_command("/send", transfer_event);
-  prompt.add_command("/accept", accept_event);
-  prompt.add_command("/refuse", refuse_event);
-  manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
-  manager.loop();
-  if (current_file.is_open()) current_file.close();
+  if (argc == 4 && !strcmp(argv[3], "udp")) {
+    UDPConnection udp_server;
+    udp_server.connect(hostname, port);
+  } else {
+    // Conexão primária
+    server_input.connect(hostname, port);
+    // Pede ID
+    server_input.send(Command::request_id());
+    Command cmd = server_input.receive();
+    if (cmd.opcode() == Command::GIVE_ID)
+      ID = atoi(cmd.arg(0).c_str());
+    printf("Recebido ID %d\n", ID);
+    // Prepara e entra em loop
+    prompt.init();
+    prompt.add_command("/nick", nick_event);
+    prompt.add_command("/list", list_event);
+    prompt.add_command("/msg", msg_event);
+    prompt.add_command("/send", transfer_event);
+    prompt.add_command("/accept", accept_event);
+    prompt.add_command("/refuse", refuse_event);
+    manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
+    manager.loop();
+    if (current_file.is_open()) current_file.close();
+  }
   return 0;
 }
 
