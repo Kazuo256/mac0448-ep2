@@ -2,6 +2,7 @@
 #include "UDPconnection.h"
 
 #include <cstdio>
+#include <strings.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -43,7 +44,7 @@ Connection* UDPConnection::accept () {
   struct sockaddr_in  remote_info;
 	int                 remote_info_size;
   int                 n;
-	char                enderecoRemoto[MAXDATASIZE + 1];
+	char                enderecoRemoto[INET_ADDRSTRLEN];
   char                recvline[MAXLINE+1];
 
   n = recvfrom(sockfd(), recvline, MAXLINE, 0, (struct sockaddr*)&remote_info,
@@ -78,6 +79,43 @@ Connection* UDPConnection::accept () {
 }
 
 bool UDPConnection::connect (const string& hostname, unsigned short port) {
+  /* Para uso com o gethostbyname */
+  struct  hostent *hptr;
+  char    enderecoIPServidor[INET_ADDRSTRLEN];
+
+  if ( (hptr = gethostbyname(hostname.c_str())) == NULL) {
+    fprintf(stderr,"gethostbyname :(\n");
+    exit(1);
+  }
+  /* Verificando se de fato o endereço é AF_INET */
+  if (hptr->h_addrtype != AF_INET) {
+    fprintf(stderr,"h_addrtype :(\n");
+    exit(1);
+  }
+  /* Salvando o IP do servidor (Vai pegar sempre o primeiro IP
+  * retornado pelo DNS para o nome passado no shell)*/
+  if (inet_ntop(AF_INET, hptr->h_addr_list[0], enderecoIPServidor,
+                sizeof(enderecoIPServidor)) == NULL) {
+    fprintf(stderr,"inet_ntop :(\n");
+    exit (1);
+  }
+
+  /* A partir deste ponto o endereço IP do servidor estará na string
+  * enderecoIPServidor */
+  printf("[Conectando no servidor no IP %s]\n",enderecoIPServidor);
+  printf("[o comando 'exit' encerra a conexão]\n");
+
+	bzero(&remote_info_, sizeof(remote_info_));
+  dadosLocalLen=sizeof(local_info_);
+  bzero(&local_info_, dadosLocalLen);
+	remote_info_.sin_family = AF_INET;
+	remote_info_.sin_port   = htons(port);
+
+  /* O endereço IP passado para a função é o que foi retornado na gethostbyname */
+	if (inet_pton(AF_INET, enderecoIPServidor, &remote_info_.sin_addr) <= 0) {
+		perror("inet_pton error");
+		exit(1);
+	}
   return false;
 }
 
