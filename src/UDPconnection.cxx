@@ -164,7 +164,7 @@ bool UDPConnection::connect (const string& hostname, unsigned short port) {
   n = recv(sockfd(), recvline, MAXLINE, 0);
   recvline[n] = '\0';
 
-  printf("[UDP connection response: %hu(%d)]\n", *(unsigned short*)recvline,
+  printf("[UDP connection response: %hu(%d)]\n", ntohs(*(unsigned short*)recvline),
          n);
 
   remote_info_.sin_port = *(unsigned short*)recvline;
