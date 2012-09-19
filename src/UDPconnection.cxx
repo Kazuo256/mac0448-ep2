@@ -164,8 +164,10 @@ bool UDPConnection::connect (const string& hostname, unsigned short port) {
   n = recv(sockfd(), recvline, MAXLINE, 0);
   recvline[n] = '\0';
 
-  printf("[UDP connection response: %hu(%d)]\n", ntohs(*(unsigned short*)recvline),
-         n);
+  printf(
+    "[UDP connection response: %hu]\n",
+    ntohs(*(unsigned short*)recvline)
+  );
 
   remote_info_.sin_port = *(unsigned short*)recvline;
 
@@ -179,11 +181,23 @@ bool UDPConnection::connect (const string& hostname, unsigned short port) {
 }
 
 Command UDPConnection::receive() {
-  return Command::disconnect();
+  char cmdline[MAXLINE+1];
+  int n=recv(sockfd(), cmdline, MAXLINE, 0);
+	if (n < 0) {
+		perror("read error");
+		exit(1);
+	}
+  cmdline[n]=0;
+  return Command::from_packet(cmdline, n);
 }
 
 void UDPConnection::send (const Command& cmd) {
-  
+  string packet = cmd.make_packet();
+  size_t size = packet.size();
+  if (::send(sockfd(), packet.c_str(), size, 0) < 0) {
+    perror("write error");
+    exit(1);
+  }
 }
 
 unsigned short UDPConnection::local_port () const {
