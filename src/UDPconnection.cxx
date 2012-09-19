@@ -45,7 +45,7 @@ void UDPConnection::host (unsigned short port) {
 
 Connection* UDPConnection::accept () {
   struct sockaddr_in  remote_info;
-	int                 remote_info_size;
+	int                 remote_info_size = sizeof(remote_info);
   int                 n;
 	char                enderecoRemoto[INET_ADDRSTRLEN];
   char                recvline[MAXLINE+1];
@@ -55,6 +55,7 @@ Connection* UDPConnection::accept () {
                (socklen_t*)&remote_info_size);
   recvline[n] = '\0';
   printf("[UDP connection request: %s]\n", recvline);
+  printf("[Socket data size: %d]\n", remote_info_size);
   /* Imprimindo os dados do socket remoto */
   printf("[Dados do socket remoto: (IP: %s, PORTA: %d)]\n",
          inet_ntop(
@@ -65,7 +66,7 @@ Connection* UDPConnection::accept () {
           ),
          ntohs(remote_info.sin_port));
   UDPConnection *accepted = new UDPConnection();
-  accepted->local_info_  = local_info_;
+  //accepted->local_info_  = local_info_;
   accepted->remote_info_ = remote_info;
   accepted->remote_addr_ = enderecoRemoto;
   if (::connect(accepted->sockfd(), (struct sockaddr*)&accepted->remote_info_,
@@ -74,7 +75,20 @@ Connection* UDPConnection::accept () {
     delete accepted;
 		exit(1);
   }
-  if (::send(accepted->sockfd(), "accepted", sizeof "accepted", 0) < 0) {
+  socklen_t dadosLocalLen = sizeof(accepted->local_info_);
+  if (getsockname(accepted->sockfd(), (struct sockaddr*)&accepted->local_info_,
+                  (socklen_t*)&dadosLocalLen)) {
+  	perror("getsockname error");
+  	exit(1);
+  }
+  printf(
+    "[Dados do socket local: (IP: %s, PORTA: %d)]\n",
+    accepted->local_address().c_str(),
+    accepted->local_port()
+  );
+  if (::sendto(sockfd(), (const void*)&accepted->local_info_.sin_port,
+               sizeof(accepted->local_info_.sin_port), 0,
+               (struct sockaddr*)&remote_info, remote_info_size) < 0) {
     perror("connection confirmation error");
     delete accepted;
     exit(1);
@@ -134,9 +148,9 @@ bool UDPConnection::connect (const string& hostname, unsigned short port) {
   }
 
   printf(
-    "Dados do socket local: (IP: %s, PORTA: %d)\n",
+    "[Dados do socket local: (IP: %s, PORTA: %d)]\n",
     local_address().c_str(),
-    ntohs(local_info_.sin_port)
+    local_port()
   );
 
   if (::send(sockfd(), "connect_me", sizeof "connect_me", 0) < 0) {
@@ -147,12 +161,13 @@ bool UDPConnection::connect (const string& hostname, unsigned short port) {
 
   char      recvline[MAXLINE+1];
   ssize_t   n;
-  socklen_t remote_len = sizeof(remote_info_);
-  n = recvfrom(sockfd(), recvline, MAXLINE, 0, (struct sockaddr*)&remote_info_,
-               (socklen_t*)&remote_len);
+  n = recv(sockfd(), recvline, MAXLINE, 0);
   recvline[n] = '\0';
 
-  printf("[UDP connection response: %s]\n", recvline);
+  printf("[UDP connection response: %hu(%d)]\n", *(unsigned short*)recvline,
+         n);
+
+  remote_info_.sin_port = *(unsigned short*)recvline;
 
 	if (::connect(sockfd(), (struct sockaddr*)&remote_info_,
               sizeof(remote_info_)) < 0) {
