@@ -36,9 +36,20 @@ static string                       hostname;
 static unsigned short               port;
 static EventManager                 manager;
 static Prompt                       prompt;
-static TCPConnection                server_output, server_input;
+//static TCPConnection                server_output, server_input;
+static Connection                   *server_output, *server_input;
 static int                          ID = -1;
 static unordered_map<string,string> senders;
+
+static void create_server_connections (bool udp) {
+  if (udp) {
+    server_input = new UDPConnection;
+    server_output = new UDPConnection;
+  } else {
+    server_input = new TCPConnection;
+    server_output = new TCPConnection;
+  }
+}
 
 // EVENTOS DE INPUT
 
@@ -49,7 +60,7 @@ static EventManager::Status prompt_event () {
 }
 
 static EventManager::Status server_event () {
-  Command cmd = server_output.receive();
+  Command cmd = server_output->receive();
   cout << "\n[Received command: " << static_cast<string>(cmd) << "]";
   switch (cmd.opcode()) {
     case Command::MSG:
@@ -90,19 +101,19 @@ static void nick_event (const string& nick, const string& unused) {
   else {
     if (!secondary_connected) {
       // Abre conexão secundária
-      server_output.connect(hostname, port);
+      server_output->connect(hostname, port);
       secondary_connected = true;
     }
     // Pede para associar um novo nick ao ID
     stringstream ID_string;
     ID_string << ID;
-    server_output.send(Command::nick(nick, ID_string.str()));
-    Command response = server_output.receive();
+    server_output->send(Command::nick(nick, ID_string.str()));
+    Command response = server_output->receive();
     if (response.opcode() == Command::REFUSE_NICK)
       cout << "[Nick '" << nick << "' was refused]\n";
     else if (response.opcode() == Command::ACCEPT_NICK) {
       cout << "[Now using nick '" << nick << "'].\n";
-      manager.add_event(server_output.sockfd(), server_event);   
+      manager.add_event(server_output->sockfd(), server_event);   
       current_nick = nick;
     }
     else
@@ -111,8 +122,8 @@ static void nick_event (const string& nick, const string& unused) {
 } 
 
 static void list_event (const string& unused1, const string& unused2) {
-  server_input.send(Command::list_request());
-  Command response = server_input.receive();
+  server_input->send(Command::list_request());
+  Command response = server_input->receive();
   if (response.opcode() == Command::LIST_RESPONSE) {
     cout << "[Currently on-line users:]\n";
     for (size_t i = 0; i < response.num_args(); ++i)
@@ -128,8 +139,8 @@ static void msg_event (const string& target, const string& msg) {
   else if (target.empty() || msg.empty())
     cout << "[Invalid empty target nick or message]\n";
   else {
-    server_input.send(Command::msg(target, msg));
-    Command response = server_input.receive();
+    server_input->send(Command::msg(target, msg));
+    Command response = server_input->receive();
     if (response.opcode() == Command::MSG_OK)
       cout << "[Message sent to '" << target << "']\n";
     else if (response.opcode() == Command::MSG_FAIL)
@@ -153,9 +164,9 @@ static void transfer_event (const string& target, const string& filepath) {
     cout << "[Não foi possível acessar o arquivo '" << filepath << "']\n";
     return;
   }
-  server_input.send(Command::send(target, filepath));
+  server_input->send(Command::send(target, filepath));
   cout << "[Tentando enviar arquivo para o usuário '" << target << "']\n";
-  Command response = server_output.receive();
+  Command response = server_output->receive();
   switch (response.opcode()) {
     case Command::SEND_OK:
       if (response.num_args() < 2)
@@ -215,7 +226,7 @@ static void accept_event (const string& sender, const string& unused) {
     cout << "[Nenhuma transferência pendente de '" << sender << "']\n";
     return;
   }
-  server_input.send(Command::accept(sender));
+  server_input->send(Command::accept(sender));
   TCPConnection temp;
   temp.host(8080);
   Connection *download = temp.accept();
@@ -257,7 +268,7 @@ static void refuse_event (const string& sender, const string& unused) {
     cout << "[Nenhuma transferência pendente de '" << sender << "']\n";
     return;
   }
-  server_input.send(Command::refuse(sender));
+  server_input->send(Command::refuse(sender));
   senders.erase(sender);
 }
 
@@ -272,30 +283,29 @@ int main(int argc, char **argv) {
   
   hostname = argv[1];
   port = atoi(argv[2]);
-  if (argc == 4 && !strcmp(argv[3], "udp")) {
-    UDPConnection udp_server;
-    udp_server.connect(hostname, port);
-  } else {
-    // Conexão primária
-    server_input.connect(hostname, port);
-    // Pede ID
-    server_input.send(Command::request_id());
-    Command cmd = server_input.receive();
-    if (cmd.opcode() == Command::GIVE_ID)
-      ID = atoi(cmd.arg(0).c_str());
-    printf("Recebido ID %d\n", ID);
-    // Prepara e entra em loop
-    prompt.init();
-    prompt.add_command("/nick", nick_event);
-    prompt.add_command("/list", list_event);
-    prompt.add_command("/msg", msg_event);
-    prompt.add_command("/send", transfer_event);
-    prompt.add_command("/accept", accept_event);
-    prompt.add_command("/refuse", refuse_event);
-    manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
-    manager.loop();
-    if (current_file.is_open()) current_file.close();
-  }
+  bool udp = argc == 4 && !strcmp(argv[3], "udp");
+  create_server_connections(udp);
+  // Conexão primária
+  server_input->connect(hostname, port);
+  // Pede ID
+  server_input->send(Command::request_id());
+  Command cmd = server_input->receive();
+  if (cmd.opcode() == Command::GIVE_ID)
+    ID = atoi(cmd.arg(0).c_str());
+  printf("Recebido ID %d\n", ID);
+  // Prepara e entra em loop
+  prompt.init();
+  prompt.add_command("/nick", nick_event);
+  prompt.add_command("/list", list_event);
+  prompt.add_command("/msg", msg_event);
+  prompt.add_command("/send", transfer_event);
+  prompt.add_command("/accept", accept_event);
+  prompt.add_command("/refuse", refuse_event);
+  manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
+  manager.loop();
+  if (current_file.is_open()) current_file.close();
+  delete server_input;
+  delete server_output;
   return 0;
 }
 

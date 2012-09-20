@@ -31,7 +31,7 @@ using ep2::ServerData;
 static EventManager     manager;
 static ServerData       serverdata(manager);
 static ServerHandler    serverhandler(&serverdata);
-static TCPConnection    server;
+static TCPConnection    tcp_server;
 static UDPConnection    udp_server;
 // EVENTS
 
@@ -72,10 +72,10 @@ int main (int argc, char **argv) {
       fprintf(stderr,"Uso: %s <Porta>\n",argv[0]);
 		exit(1);
 	}
-  server.host(atoi(argv[1]));
+  tcp_server.host(atoi(argv[1]));
   udp_server.host(atoi(argv[1]));
   manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
-  manager.add_event(server.sockfd(), bind(accept_event, &server));
+  manager.add_event(tcp_server.sockfd(), bind(accept_event, &tcp_server));
   manager.add_event(udp_server.sockfd(), bind(accept_event, &udp_server));
   manager.loop();
 	return 0;
