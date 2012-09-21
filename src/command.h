@@ -33,7 +33,7 @@ class Command {
                       MSG_OK = 0x16,
                       SEND_FAIL = 0x17,
                       SEND_OK = 0x18,
-                      MAX_COMMAND = 0x19;
+                      MAX_COMMAND = 0x20;
 
     byte opcode () const { return opcode_; }
     std::string arg (size_t idx) const { return data_[idx]; }
@@ -44,7 +44,6 @@ class Command {
     operator std::string () const;
 
     static Command from_packet (const std::string& packet);
-    static Command from_packet (const char* packet, size_t n);
 
     static Command null_cmd () { return Command(0xff); }
 

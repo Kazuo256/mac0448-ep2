@@ -41,22 +41,17 @@ Command::operator string () const {
 }
 
 Command Command::from_packet (const string& packet) {
-  return from_packet(packet.c_str(), packet.size());
-}
-
-Command Command::from_packet (const char* packet, size_t n) {
-  if (n <= 0) return disconnect();
+  if (packet.size() <= 0) return disconnect();
   if (packet[0] >= MAX_COMMAND) return Command(255);
   Command cmd(packet[0]);
   size_t args = static_cast<size_t>(packet[1]);
-  string packet_str(packet, packet+n);
   byte size = 0;
   for (size_t pos = 2, count = 0;
-       count < args && pos < n;
+       count < args && pos < packet.size();
        pos += size, ++pos, ++count) {
     size = packet[pos];
     cmd.data_.push_back(
-      packet_str.substr(pos+1, size)
+      packet.substr(pos+1, size)
     );
   }
   return cmd;

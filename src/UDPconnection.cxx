@@ -188,7 +188,7 @@ Command UDPConnection::receive() {
 		exit(1);
 	}
   cmdline[n]=0;
-  return Command::from_packet(cmdline, n);
+  return Command::from_packet(string(cmdline, n));
 }
 
 void UDPConnection::send (const Command& cmd) {

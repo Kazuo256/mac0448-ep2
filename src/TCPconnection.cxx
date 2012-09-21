@@ -182,7 +182,7 @@ Command TCPConnection::receive () {
 		exit(1);
 	}
   cmdline[n]=0;
-  return Command::from_packet(cmdline, n);
+  return Command::from_packet(string(cmdline, n));
 }
 
 void TCPConnection::send (const Command& cmd) {
