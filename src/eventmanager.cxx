@@ -1,15 +1,13 @@
 
 #include "eventmanager.h"
 
-#include <cstdlib>
-#include <cstdio>
+#include <iostream>
 #include <poll.h>
-
-#define BASE_SIZE 16
 
 namespace ep2 {
 
 using std::vector;
+using std::cout;
 
 void EventManager::add_event (int fd, const Callback& callback) {
   fds_[fd] = callback;
@@ -18,20 +16,24 @@ void EventManager::add_event (int fd, const Callback& callback) {
 void EventManager::loop () {
   while (true) {
     vector<int> fds;
-    // poll for new events
+    // espera até haver eventos a serem tratados
     poll(fds);
-    // loop through events
+    // trata cada evento
     for (vector<int>::iterator it = fds.begin(); it != fds.end(); ++it) {
       switch (call_event(*it)) {
-        case CONTINUE: break; // does nothing
+        case CONTINUE:
+          break;              // não faz nada
         case STOP:
-          fds_.erase(*it);
+          fds_.erase(*it);    // remove o evento
           break;
         case EXIT:
-          return;
+          return;             // pára de tratar eventos
         case NOTFOUND:
         default:
-          puts("EVENT NOT FOUND");
+#ifdef EP2_DEBUG
+          // Avisa que um evento inesperado aconteceu, mas não faz nada.
+          cout << "EVENT NOT FOUND";
+#endif
           break;
       }
     }
@@ -46,6 +48,7 @@ EventManager::Status EventManager::call_event (int fd) {
 }
 
 void EventManager::poll (vector<int>& ready) {
+  // Usa a função poll do C para detectar os descritores com input.
   size_t pos = 0, size = fds_.size();
   struct pollfd *fds = new struct pollfd[size];
   for (EventTable::iterator it = fds_.begin(); it != fds_.end(); ++it, ++pos) {

@@ -8,7 +8,7 @@
 
 namespace ep2 {
 
-/// Comandos usados pelo protocolo da camada de aplicação.
+/// Representa os comandos usados pelo protocolo da camada de aplicação.
 /** É possível construir objetos de comando usando os métodos estáticos (como
   * nick() ou msg()) ou a partir de pacotes (strings) recebidos pela rede.
   * Também é possível converter um comando em um pacote para mandar através de
