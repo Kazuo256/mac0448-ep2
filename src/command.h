@@ -8,32 +8,43 @@
 
 namespace ep2 {
 
+/// Comandos usados pelo protocolo da camada de aplicação.
+/** É possível construir objetos de comando usando os métodos estáticos (como
+  * nick() ou msg()) ou a partir de pacotes (strings) recebidos pela rede.
+  * Também é possível converter um comando em um pacote para mandar através de
+  * uma conexão.
+  */
 class Command {
 
   public:
 
+    // Tipo usado para identificar comandos e para compor os pacotes derivados
+    // deles.
     typedef unsigned char             byte;
+
+    // Tipo usado para guardar os argumentos de um comando.
     typedef std::vector<std::string>  ArgList;
 
-    const static byte REQUEST_ID = 0x1,
-                      NICK = 0x2,
-                      DISCONNECT = 0x3,
-                      MSG = 0x4,
-                      LIST_REQUEST = 0x5,
-                      SEND = 0x6,
-                      CHUNK = 0x7,
-                      ACCEPT = 0x8,
-                      REFUSE = 0x9,
-                      CONTINUE = 0xA,
-                      GIVE_ID = 0x11,
-                      REFUSE_NICK = 0x12,
-                      ACCEPT_NICK = 0x13,
+    // Tipos de comandos.
+    const static byte REQUEST_ID    = 0x01, // usados pelo cliente
+                      NICK          = 0x02,
+                      DISCONNECT    = 0x03,
+                      MSG           = 0x04,
+                      LIST_REQUEST  = 0x05,
+                      SEND          = 0x06,
+                      CHUNK         = 0x07,
+                      ACCEPT        = 0x08,
+                      REFUSE        = 0x09,
+                      CONTINUE      = 0x0A,
+                      GIVE_ID       = 0x11, // usados pelo servidor
+                      REFUSE_NICK   = 0x12,
+                      ACCEPT_NICK   = 0x13,
                       LIST_RESPONSE = 0x14,
-                      MSG_FAIL = 0x15,
-                      MSG_OK = 0x16,
-                      SEND_FAIL = 0x17,
-                      SEND_OK = 0x18,
-                      MAX_COMMAND = 0x20;
+                      MSG_FAIL      = 0x15,
+                      MSG_OK        = 0x16,
+                      SEND_FAIL     = 0x17,
+                      SEND_OK       = 0x18,
+                      MAX_COMMAND   = 0x20;
 
     byte opcode () const { return opcode_; }
     std::string arg (size_t idx) const { return data_[idx]; }

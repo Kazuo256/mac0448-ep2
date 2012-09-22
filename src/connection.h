@@ -14,11 +14,11 @@ class Command;
 
 /// Interface para conexões de rede.
 /** Há duas possíveis maneiras de se obter objetos que implementem essa
- ** interface. Uma é através dos construtores das classes filhas,
- ** TCPConnection e UDPConnection. A outra é através do método accept(),
- ** que aceita um nova requisição de conexão vinda da rede e a devolve como
- ** um novo objeto.
- */
+  * interface. Uma é através dos construtores das classes filhas,
+  * TCPConnection e UDPConnection. A outra é através do método accept(),
+  * que aceita um nova requisição de conexão vinda da rede e a devolve como
+  * um novo objeto.
+  */
 class Connection {
 
   public:
