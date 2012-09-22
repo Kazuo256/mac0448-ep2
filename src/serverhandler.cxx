@@ -22,7 +22,9 @@ ServerHandler::ServerHandler (ServerData* serverdata) :
   serverdata_(serverdata) {}
 
 void ServerHandler::handle (Connection *client, const Command& cmd) {
+#ifdef EP2_DEBUG
   cout << static_cast<string>(cmd) << "\n";
+#endif
   int id = -1;
   Command response = Command::null_cmd();
   Command::ArgList arg_list;

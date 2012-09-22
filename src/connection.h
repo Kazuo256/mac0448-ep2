@@ -31,7 +31,7 @@ class Connection {
       close(sockfd_);
     }
 
-    // Getter do descritor do socket.
+    // Devolve o descritor do socket.
     int sockfd () const { return sockfd_; }
 
     // Indica que essa conexão serve apenas para receber novas conexões.

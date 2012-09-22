@@ -13,6 +13,7 @@ using std::make_pair;
 using std::min;
 
 string Command::make_packet () const {
+  // Algoritmo para fazer um pacote a partir de um comando. Ver mais no LEIAME.
   string packet;
   packet += opcode_;
   packet += static_cast<byte>(data_.size());
@@ -24,6 +25,7 @@ string Command::make_packet () const {
   return packet;
 }
 
+#ifdef EP2_DEBUG
 Command::operator string () const {
   switch(opcode_) {
     case REQUEST_ID:
@@ -37,10 +39,14 @@ Command::operator string () const {
       return "Nick accepted";
     default:
       return "Unknown command";
+    // na verdade tem os outros comandos, mas não foi necessário fazer esses
+    // outros casos para depurar o programa
   }
 }
+#endif
 
 Command Command::from_packet (const string& packet) {
+  // Algoritmo para fazer um comando a partir de um pacote. Ver mais no LEIAME.
   if (packet.size() <= 0) return disconnect();
   if (packet[0] >= MAX_COMMAND) return Command(255);
   Command cmd(packet[0]);
@@ -57,33 +63,27 @@ Command Command::from_packet (const string& packet) {
   return cmd;
 }
 
-// Client commands
+// Comandos usados pelo cliente
 
 Command Command::request_id () {
-  return Command(REQUEST_ID, ArgList());
+  return Command(REQUEST_ID);
 }
 
 Command Command::nick (const string& name, const string& id) {
   return generic_cmd<NICK>(name, id);
 }
 
-Command Command::msg (const string& nick, const string& msg) {
-  return generic_cmd<MSG>(nick, msg);
-}
-
 Command Command::disconnect () {
-  return Command(DISCONNECT, ArgList());
-}
-
-Command Command::send (const string& name, const string& filepath) {
-  return generic_cmd<SEND>(name, filepath);
+  return Command(DISCONNECT);
 }
 
 Command Command::list_request () {
-  return Command(LIST_REQUEST, ArgList());
+  return Command(LIST_REQUEST);
 }
 
 Command Command::chunk (const string& data) {
+  // Comandos do tipo CHUNK usam os argumentos para passar pedaços de 255 bytes
+  // do arquivo sendo transferido.
   Command cmd(CHUNK);
   stringstream args(data);
   int size = data.size();
@@ -108,22 +108,23 @@ Command Command::cont () {
   return Command(CONTINUE);
 }
 
-// Server Commands
+// Comandos usados pelo servidor
 
 Command Command::give_id (const string& id) {
   return generic_cmd<GIVE_ID>(id);
 }
 
 Command Command::refuse_nick () {
-  return Command(REFUSE_NICK, ArgList());
+  return Command(REFUSE_NICK);
 }
 
 Command Command::accept_nick () {
-  return Command(ACCEPT_NICK, ArgList());
+  return Command(ACCEPT_NICK);
 }
 
-Command Command::list_response (const ArgList& arg_list) {
-  return Command(LIST_RESPONSE, arg_list);
+Command Command::list_response (const ArgList& users) {
+  // Cada argumento é o nick de um usuário on-line no servidor.
+  return Command(LIST_RESPONSE, users);
 }
 
 Command Command::msg_fail () {
@@ -140,6 +141,16 @@ Command Command::send_fail (const string& info) {
 
 Command Command::send_ok (const string& addr, const string& port) {
   return generic_cmd<SEND_OK>(addr, port);
+}
+
+// Comandos usados por ambos
+
+Command Command::msg (const string& nick, const string& msg) {
+  return generic_cmd<MSG>(nick, msg);
+}
+
+Command Command::send (const string& name, const string& filepath) {
+  return generic_cmd<SEND>(name, filepath);
 }
 
 } // namespace ep2

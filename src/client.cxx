@@ -61,7 +61,9 @@ static EventManager::Status prompt_event () {
 
 static EventManager::Status server_event () {
   Command cmd = server_output->receive();
+#ifdef EP2_DEBUG
   cout << "\n[Received command: " << static_cast<string>(cmd) << "]";
+#endif
   switch (cmd.opcode()) {
     case Command::MSG:
     {
