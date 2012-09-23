@@ -1,0 +1,211 @@
+
+MAC0448-2012: Programação para Redes de Computadores.
+Segundo Exercício-Programa: Sistema de bate-papo
+
+Alunos:                     Nº USP:
+  Thiago de Gouveia Nunes     6797289
+  Wilson Kazuo Mizutani       6797230
+
+
+I. Organização dos arquivos.
+
+
+  Nosso EP deve apresentar a seguinte organização de arquivos e pastas:
+
+    ep2-thiago-wilson/
+    |- Makefile
+    |- objs.makefile
+    |- deps.makefile
+    |- LEIAME
+    |- src/
+    |  |- server.cxx
+    |  |- client.cxx
+    |  |- ...demais arquivos de código fonte...
+
+
+II. Compilação.
+
+
+  O programa vem com um Makefile para compilá-lo. Basta usar o comando
+
+    $ make
+
+  para compilar o EP normalmente, ou
+
+    $ make debug
+
+  para compilar com flags de depuração. Se o programa foi compilado normalmente
+alguma vez antes, então é preciso usar
+
+    $ make clean
+
+  antes de tentar compilar no modo de depuração.
+  É importante notar que a compilação do programa cliente cria uma pasta
+downloads/ vazia. Ela é usada para guardar os arquivos recebidos pelo cliente e,
+portanto, não deve ser removida enquanto o programa do cliente estiver em uso.
+
+
+III. Dependências.
+
+
+  As dependências da parte C do programa são as mesmas que havia nos arquivos de
+código fonte das aulas 7 e 9 (clientes e servidores TCP/UDP), tirando a parte de
+usar fork(). Uma diferença também é que passamos a definição da macro
+_GNU_SOURCE como argumentode compilação ao invés de deixar o #define direto no
+código.
+  Quanto à parte C++ do programa, usamos apenas as bibliotecas padrão, incluindo
+o Technichal Report 1, disponível no mínimo desde o Ubuntu 10.10 e do Debian
+Stable atual. Supomos que o programa será compilado e executado em um Linux como
+esses (como é o caso da Rede Linux do IME, por exemplo).
+
+
+IV. Modo de uso do programa.
+
+  OBSERVAÇÃO: ao longo do resto desse arquivo, usamos com frequência os termos
+"servidor", "cliente" e "usuário". "servidor" e "cliente" referem-se aos
+respectivos programas, enquanto que "usuário" refere-se à pessoa usando um
+desses programas.
+
+  ---- Servidor ----
+
+  O servidor segue a seguinte assinatura de linha de comando:
+
+    ./ep2-server <porta>
+
+  Onde:
+
+    <porta>   É a porta na qual o servidor ficará ouvindo por conexões TCP e
+              UDP.
+
+  Uma vez executado, o servidor permanece rodando e aceitando ou interagindo com
+os clientes. Para encerrar o programa do servidor deve-se usar CTRL+D, inserindo
+um EOF na entrada do programa. Isso permite que o servidor possa limpar a
+memória usada sem ter que recorrer À captura de sinais do sistema.
+
+  ---- Cliente ----
+
+  E o cliente:
+
+    ./ep2-client <endereço_do_servidor> <porta> [tcp|udp]
+
+  Onde:
+
+    <endereço_do_servidor>  É o endereço do servidor com o qual se deseja
+                            conectar o cliente.
+    <porta>                 É a porta do servidor que se deseja usar para tal
+                            conexão.
+    tcp                     Indica que o cliente usará protocolo TCP. (padrão)
+    udp                     Indica que o cliente usará protocolo UDP.
+
+ 
+  Quando executado, o cliente entra em um modo prompt para que o usuário possa
+digitar comandos que fazem o cliente executar as diversas funcionalidades do
+sistema de bate-papo. Segue a lista de comandos que o prompt do cliente aceita:
+
+    /nick <nick>
+
+        Pede ao servidor para registrar esse cliente usando <nick>. A maioria
+      das outras operações do cliente espera que o usuário tenha um nick
+      resgistrado, para que os outros clientes possam identificá-lo. Quando uma
+      operação que exige um nick é chamada sem o usuário haver definido um, o
+      programa avisará do problema.
+        Esse comando falha quando o servidor percebe que o nick já está em uso,
+      seja por esse ou por outro cliente.
+        Pode-se usar o comando /nick quantas vezes quiser para mudar o nick
+      atualmente associado ao cliente.
+
+    /list
+
+        Pede ao servidor que liste todos os nicks atualmente on-line.
+
+    /msg <target> <msg>
+
+        Pede ao servidor para enviar a mensagem <msg> (pode conter maisde uma
+      palavra) ao cliente associado ao nick <target>. É preciso ter um nick para
+      realizar essa operação. Se o nick <target> não estiver associado a nenhum
+      cliente, o servidor avisará da falha. Não é permitdo envias mensagens
+      vazias.
+
+    /send <target> <file>
+
+        Pede ao servidor para avisar o cliente associado ao nick <target> que
+      o usuário deseja transferir o arquivo <file> para ele. Se o arquivo não
+      puder ser aberto (por não existir, por exemplo), o cliente mostrará uma
+      mensagem de erro. É preciso ter um nick para realizar essa operação.
+        Uma vez enviada a requisição de transferência, o cliente fica bloqueado
+      esperando por uma resposta. Se a requisição for aceita, o arquivo é
+      transmitido imediatamente. Se não, o motivo da falha será enviado pelo
+      servidor para que o cliente o mostre ao usuário.
+
+    /accept [target]
+
+        Aceita a transferência requisitada pelo cliente associado ao nick
+      [target]. Se [target] for vazio, o cliente imprimirá uma lista com todas
+      as requisições pendentes de transferência que lhe foram enviadas. É
+      preciso ter um nick para realizar essa operação.
+        Se não houver um cliente associado ao nick [target] no servidor, o
+      usuário será notificado disso. Uma vez aceita, a transferência começa
+      imediatamente e o usuário tem que esperar até o arquivo ser completamente
+      recebido. Depois disso, a transferência é removida da lista de pendências.
+        Todo arquivo recebido é colocado na pasta downloads/, que é gerada pelo
+      Makefile do programa sempre que o programa cliente é compilado.
+
+    /refuse [target]
+
+        Recusa a transferência requisitada pelo cliente associado ao nick
+      [target]. Se [target] for vazio, o cliente imprimirá uma lista com todas
+      as requisições pendentes de transferência que lhe foram enviadas. É
+      preciso ter um nick para realizar essa operação.
+        Se não houver um cliente associado ao nick [target] no servidor, o
+      usuário será notificado disso. Uma vez recusada, a transferência é
+      imediatamente removida da lista de pendências e o cliente remetente é
+      notificado da recusa.
+
+  Para encerrar o programa do cliente, basta usar CTRL+D (inserrir um caracter
+de EOF no terminal). Um comando para disconectar é automaticamente enviado ao
+servidor.
+
+V. Protocolo
+
+
+VI. Organização do código:
+
+
+  Segue a descrição do que cada arquivo de código é responsável. O nome dos
+arquivos é relativo à pasta src/, como visto na seção I desse LEIAME.
+
+  main.c:
+
+    Contém basicamente o arquivo de exemplo do professor com algumas mudanças,
+  tanto na seção reservada para o código do EP quanto nos includes e nas
+  declarações das variáveis da função main(). Só tiramos algumas variáveis que
+  deixaram de ser necessárias para evitar warnings. Os includes são dos arquivos
+  do nosso EP.
+
+  ep1.h e ep1.c:
+
+    Contém a lógica de mais alto nível do servidor HTTP. Aqui, o código limita-
+  se a usar os módulos EP1_NET e EP1_SERVER (explicados adiante) para compor
+  exatamente o mesmo loop de read-write que havia no exemplo do professor, só
+  que com os detalhes de implementação encapsulados.
+
+  ep1/net.h e ep1/net.c:
+
+    É o módulo EP1_NET. Responsável por receber e enviar pacotes usando a API de
+  sockets. Define a estrutura EP1_NET_packet que representa um pacote HTTP
+  "bruto", isso é, da maneira como ele chegou da rede ou pronto para ser enviado
+  para ela.
+
+  ep1/server.h e ep1/server.c:
+
+    É o módulo EP1_SERVER. Responsável pela lógica de mais baixo nível do
+  servidor HTTP. Interpreta as requisições e constrói os pacotes de resposta
+  a serem enviados, seguindo o protocolo HTTP dentro das especificações do
+  enunciado.
+
+  ep1/date.h e ep1/date.c:
+
+    É o módulo EP1_DATE. Responsável por produzir strings de data formatadas,
+  seguindo o padrão usado pelo Apache.
+
+
