@@ -88,10 +88,10 @@ static EventManager::Status server_event () {
     {
       // Verifica integridade do comando.
       if (cmd.num_args() < 2)
-        cout << "\n[Bad message from server]\n";
+        cout << "\n[Mensagem do servidor está mal formada]\n";
       else {
         // Se estiver OK, exibe para o usuário.
-        cout << "\n[Message from '" << cmd.arg(0) << "':] ";
+        cout << "\n[Messagem de '" << cmd.arg(0) << "':] ";
         cout << cmd.arg(1) << "\n";
         prompt.init();
       }
@@ -100,13 +100,14 @@ static EventManager::Status server_event () {
     {
       // Verifica integridade do comando
       if (cmd.num_args() < 2)
-        cout << "\n[Bad send command from server]\n";
+        cout << "\n[Comando 'send' enviado pelo servidor está mal formado]\n";
       else {
         // Se estiver OK, avisa o usuário e adiciona na lista de transferências
         // pendentes.
         senders[cmd.arg(0)] = cmd.arg(1);
-        cout << "\n['" << cmd.arg(0) << "' wants to send file '" << cmd.arg(1) << "']";
-        cout << "\n[To accept it use '/accept <user>']\n";
+        cout  << "\n['" << cmd.arg(0) << "' quer enviar-lhe o arquivo '"
+              << cmd.arg(1) << "']";
+        cout  << "\n[Para aceitá-lo use '/accept <user>']\n";
         prompt.init();
       }
     } break;
@@ -115,64 +116,78 @@ static EventManager::Status server_event () {
   return EventManager::CONTINUE;
 }
 
-// EVENTOS DE PROMPT
+//// Eventos de prompt do usuário ////
 
+// Flag para saber se a conexão secundário já foi estabelecida.
 static bool     secondary_connected = false;
+// Nick sendo atualmente utilizado. Vazio significa que ainda não tem um nick.
 static string   current_nick = "";
-static ifstream current_file;
 
+// Quando o usuário pede para mudar o nick.
 static void nick_event (const string& nick, const string& unused) {
   if (nick.empty())
     cout << "Nick vazio inválido.\n";
   else {
     if (!secondary_connected) {
-      // Abre conexão secundária
+      // Abre conexão secundária se ainda não havia.
       server_output->connect(hostname, port);
       secondary_connected = true;
     }
-    // Pede para associar um novo nick ao ID
+    // Pede ao servidor para associar um novo nick ao ID
     stringstream ID_string;
     ID_string << ID;
     server_output->send(Command::nick(nick, ID_string.str()));
+    // Verifica resposta do servidor.
     Command response = server_output->receive();
     if (response.opcode() == Command::REFUSE_NICK)
-      cout << "[Nick '" << nick << "' was refused]\n";
+      cout << "[Nick '" << nick << "' foi recusado]\n";
     else if (response.opcode() == Command::ACCEPT_NICK) {
-      cout << "[Now using nick '" << nick << "'].\n";
+      cout << "[Novo nick confirmado: '" << nick << "'].\n";
+      // Em caso positivo, renova o evento de receber comandos e atualiza o
+      // nick atual.
       manager.add_event(server_output->sockfd(), server_event);   
       current_nick = nick;
     }
     else
-      cout << "[Unexpected answer from server]\n";
+      cout << "[Resposta inesperada do servidor]\n";
   }
 } 
 
+// Quando o cliente pede para listar os nick registrados no servidor.
 static void list_event (const string& unused1, const string& unused2) {
+  // Envia requisição de lista de nicks.
   server_input->send(Command::list_request());
+  // Pega a resposta, verifica ela, e exibe a lista se possível.
   Command response = server_input->receive();
   if (response.opcode() == Command::LIST_RESPONSE) {
-    cout << "[Currently on-line users:]\n";
+    cout << "[Usuários on-line no momento:]\n";
     for (size_t i = 0; i < response.num_args(); ++i)
       cout << "  " << response.arg(i) << "\n";
   }
   else
-    cout << "[Unexpected answer from server]\n";
+    cout << "[Resposta inesperada do servidor]\n";
 }
 
+// Quando o usuário quer enviar um arquivo para outro cliente conectado no
+// servidor.
 static void msg_event (const string& target, const string& msg) {
   if (current_nick.empty())
-    cout << "[You cannot send messages without a nick!]\n";
+    cout << "[Você não pode enviar mensagens sem um nick!]\n";
   else if (target.empty() || msg.empty())
-    cout << "[Invalid empty target nick or message]\n";
+    cout << "[Faltou destinatário ou a mensagem etá vazia]\n";
   else {
+    // Envia comando de mensagem e analiza a resposta.
     server_input->send(Command::msg(target, msg));
     Command response = server_input->receive();
     if (response.opcode() == Command::MSG_OK)
-      cout << "[Message sent to '" << target << "']\n";
-    else if (response.opcode() == Command::MSG_FAIL)
-      cout << "[Failed to send message to '" << target << "']\n";
+      cout << "[Mensagem enviada para '" << target << "']\n";
+    else if (response.opcode() == Command::MSG_FAIL) {
+      cout << "[Não foi possível enviar a mensagem para '" << target << "']\n";
+      cout << "[Não há usuário com esse nick no servidor.]\n";
+      cout << "[Use /list para saber quem está on-line]\n";
+    }
     else
-      cout << "[Unexpected answer from server]\n";
+      cout << "[Resposta inesperada do servidor]\n";
   }
 }
 
@@ -185,8 +200,9 @@ static void transfer_event (const string& target, const string& filepath) {
     cout << "[Usuário alvo ou arquivo a ser enviado não definidos]\n";
     return;
   }
-  current_file.open(filepath.c_str(), ios_base::in | ios_base::binary);
-  if (current_file.fail()) {
+  ifstream file;
+  file.open(filepath.c_str(), ios_base::in | ios_base::binary);
+  if (file.fail()) {
     cout << "[Não foi possível acessar o arquivo '" << filepath << "']\n";
     return;
   }
@@ -203,9 +219,9 @@ static void transfer_event (const string& target, const string& filepath) {
         cout << "[Enviando para " << response.arg(0) << ":" << port << "]\n";
         transfer.connect(response.arg(0), 8080);
         char chunk[8*255+1];
-        while (current_file.good()) {
-          current_file.read(chunk, 8*255);
-          size_t n = current_file.gcount();
+        while (file.good()) {
+          file.read(chunk, 8*255);
+          size_t n = file.gcount();
           chunk[n] = '\0';
           cout << "[Enviando chunk de tamanho " << n << "]\n";
           transfer.send(Command::chunk(chunk));
@@ -223,7 +239,7 @@ static void transfer_event (const string& target, const string& filepath) {
       cout << "[Resposta inesperada do servidor]\n";
       break;
   }
-  current_file.close();
+  file.close();
 }
 
 static void show_senders () {
@@ -330,7 +346,6 @@ int main(int argc, char **argv) {
   //  TODO mensagens informativas
   prompt.init();
   manager.loop();
-  if (current_file.is_open()) current_file.close();
   server_input->send(Command::disconnect());
   server_output->send(Command::disconnect());
   delete server_input;
