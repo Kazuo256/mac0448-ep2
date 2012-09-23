@@ -15,12 +15,17 @@
 #include "eventmanager.h"
 #include "command.h"
 
+// Essa porta é usada apenas para que os clientes possam abrir uma conexão TCP
+// entre si para enviar arquivos.
+#define EP2_TRANSFER_HOST_PORT 8080
+
 using std::string;
 using std::stringstream;
 using std::ifstream;
 using std::ofstream;
 using std::ios_base;
 using std::cout;
+using std::cerr;
 using std::tr1::unordered_map;
 
 using ep2::Prompt;
@@ -168,7 +173,7 @@ static void list_event (const string& unused1, const string& unused2) {
     cout << "[Resposta inesperada do servidor]\n";
 }
 
-// Quando o usuário quer enviar um arquivo para outro cliente conectado no
+// Quando o usuário quer enviar uma mensagem para outro cliente conectado no
 // servidor.
 static void msg_event (const string& target, const string& msg) {
   if (current_nick.empty())
@@ -191,6 +196,8 @@ static void msg_event (const string& target, const string& msg) {
   }
 }
 
+// Quando o usuário pede para enviar um arquivo para outro cliente conectado no
+// servidor.
 static void transfer_event (const string& target, const string& filepath) {
   if (current_nick.empty()) {
     cout << "[Você não pode enviar arquivos sem um nick!]\n";
@@ -200,20 +207,26 @@ static void transfer_event (const string& target, const string& filepath) {
     cout << "[Usuário alvo ou arquivo a ser enviado não definidos]\n";
     return;
   }
+  // Abre o arquivo para enviá-lo se ele exitir.
   ifstream file;
   file.open(filepath.c_str(), ios_base::in | ios_base::binary);
   if (file.fail()) {
     cout << "[Não foi possível acessar o arquivo '" << filepath << "']\n";
     return;
   }
+  // Avisa que quer realizar a transferência.
   server_input->send(Command::send(target, filepath));
   cout << "[Tentando enviar arquivo para o usuário '" << target << "']\n";
+  // Aguarda resposta e trata ela de acordo.
   Command response = server_output->receive();
   switch (response.opcode()) {
     case Command::SEND_OK:
       if (response.num_args() < 2)
         cout << "[Resposta inesperada do servidor]\n";
       else {
+        // A confirmação de transferência vem com as informações do outro
+        // cliente. Assim é possível abrir uma conexão TCP direta e transferir
+        // o arquivo parte por parte (Jack, o Estripador feelings).
         TCPConnection transfer;
         unsigned short port = atoi(response.arg(1).c_str());
         cout << "[Enviando para " << response.arg(0) << ":" << port << "]\n";
@@ -225,12 +238,15 @@ static void transfer_event (const string& target, const string& filepath) {
           chunk[n] = '\0';
           cout << "[Enviando chunk de tamanho " << n << "]\n";
           transfer.send(Command::chunk(chunk));
+          // Sempre confirma a transferência
           Command check = transfer.receive();
           if (check.opcode() != Command::CONTINUE) break;
         }
       }
       break;
     case Command::SEND_FAIL:
+      // Ou o usuário destinatário não existe, ou ele recusou a transferência.
+      // O comando enviado pelo servidor contém essas informações.
       cout << "[Não foi possível enviar o arquivo para '" << target << "']\n";
       if (response.num_args() > 0)
         cout << "[" << response.arg(0) << "]\n";
@@ -242,6 +258,8 @@ static void transfer_event (const string& target, const string& filepath) {
   file.close();
 }
 
+// Função auxiliar que mostra quem está atualmente tentando enviar arquivos
+// para o usuário.
 static void show_senders () {
   unordered_map<string,string>::iterator it;
   if (senders.empty())
@@ -253,36 +271,44 @@ static void show_senders () {
   }
 }
 
+// Quando o usuário quer aceitar uma transferência enviada por outro usuário.
 static void accept_event (const string& sender, const string& unused) {
   if (current_nick.empty()) {
     cout << "[Você não pode receber arquivos sem um nick!]\n";
     return;
   }
-  unordered_map<string,string>::iterator it;
   if (sender.empty()) {
     cout << "[Especifique de quem quer aceitar o arquivo]\n";
     show_senders();
     return;
   }
+  // Verifica se de fato há uma transferÊncia pendente desse usuário.
+  unordered_map<string,string>::iterator it;
   if ((it = senders.find(sender)) == senders.end()) {
     cout << "[Nenhuma transferência pendente de '" << sender << "']\n";
     return;
   }
+  // Envia confirmação de transferÊncia para o servidor.
   server_input->send(Command::accept(sender));
+  // Agora abre uma conexão temporária para receber a conexão do outro cliente.
   TCPConnection temp;
-  temp.host(8080);
+  temp.host(EP2_TRANSFER_HOST_PORT);
   Connection *download = temp.accept();
+  // Abre o arquivo para escrever os dados recebidos.
   ofstream file((string("downloads/")+it->second).c_str(),
                 ios_base::out | ios_base::binary);
+  // Recebe os pedaços do arquivo.
   while (true) {
     Command bytes = download->receive();
+    // Chega um DISCONNECT quando o outro cliente acabou de enviar todos os
+    // pedaços do arquivo.
     if (bytes.opcode() == Command::DISCONNECT) break;
     if (bytes.opcode() != Command::CHUNK) {
       cout << "[Outro usuário enviou pacote desconhecido "<<bytes.opcode()<<"]\n";
       break;
     }
     if (bytes.num_args() < 1) {
-      cout << "[Dados corrompidos?]\n";
+      cout << "[Dados perdidos?]\n";
       break;
     }
     for (size_t i = 0; i < bytes.num_args(); ++i)
@@ -290,52 +316,66 @@ static void accept_event (const string& sender, const string& unused) {
     download->send(Command::cont());
   }
   cout << "[Arquivo recebido com sucesso]\n";
+  // Fecha o arquivo e a conexão de transferência, aĺém de remover o outro
+  // cliente da lista de transferências pendentes.
   file.close();
   delete download;
   senders.erase(sender);
 }
 
+// Quando o usuário recusa uma transferÊncia de arquivo.
 static void refuse_event (const string& sender, const string& unused) {
   if (current_nick.empty()) {
     cout << "[Você não pode recusar arquivos sem um nick!]\n";
     return;
   }
-  unordered_map<string,string>::iterator it;
   if (sender.empty()) {
     cout << "[Especifique de quem quer recusar o arquivo]\n";
     show_senders();
     return;
   }
+  // Verifica se de fato há tal transferência pendente.
+  unordered_map<string,string>::iterator it;
   if ((it = senders.find(sender)) == senders.end()) {
     cout << "[Nenhuma transferência pendente de '" << sender << "']\n";
     return;
   }
+  // Avisa o servidor que a transferência foi recusada e remove o outro cliente
+  // da lista de transferências pendentes.
   server_input->send(Command::refuse(sender));
   senders.erase(sender);
 }
 
-// MAIN
+//// MAIN ////
 
 int main(int argc, char **argv) {
-
 	if (argc < 3 || argc > 4) {
-      fprintf(stderr,"Uso: %s <Endereco IP|Nome> <Porta> [tcp|udp]\n",argv[0]);
+    cerr << "Uso: " << argv[0] << " <Endereco IP|Nome> <Porta> [tcp|udp]\n";
 		exit(1);
 	}
-  
+  string protocol = (argc == 4 ? argv[3] : "tcp");
+  if (protocol != "tcp" && protocol != "udp") {
+    cerr << "Protocolo desconhecido.";
+    cerr << "Uso: " << argv[0] << " <Endereco IP|Nome> <Porta> [tcp|udp]\n";
+		exit(1);
+  }
+  // Guarda informações passadas pela linha de comando.
   hostname = argv[1];
   port = atoi(argv[2]);
-  bool udp = argc == 4 && !strcmp(argv[3], "udp");
+  bool udp = (protocol == "udp");
+  // Cria conexões.
   create_server_connections(udp);
-  // Conexão primária
+  // Conecta a conexão primária
   server_input->connect(hostname, port);
-  // Pede ID
+  // Pede ID para o servidor.
   server_input->send(Command::request_id());
   Command cmd = server_input->receive();
   if (cmd.opcode() == Command::GIVE_ID)
     ID = atoi(cmd.arg(0).c_str());
-  printf("Recebido ID %d\n", ID);
-  // Prepara e entra em loop
+#ifdef EP2_DEBUG
+  cout << "[ID recebido: " << ID << "]\n";
+#endif
+  // Prepara comandos de prompt e eventos.
   prompt.add_command("/nick", nick_event);
   prompt.add_command("/list", list_event);
   prompt.add_command("/msg", msg_event);
@@ -343,11 +383,17 @@ int main(int argc, char **argv) {
   prompt.add_command("/accept", accept_event);
   prompt.add_command("/refuse", refuse_event);
   manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
-  //  TODO mensagens informativas
+  //  Mensagens informativas para o usuário.
+  cout << "[Cliente conectado com sucesso]\n";
+  cout << "[Use CTRL+D para encerrar o programa]\n";
+  // Ativa o prompt e deixa o gerenciador de eventos cuidar do resto.
   prompt.init();
   manager.loop();
+  // Avisa o servidor para desconectar do cliente.
   server_input->send(Command::disconnect());
-  server_output->send(Command::disconnect());
+  if (secondary_connected)
+    server_output->send(Command::disconnect());
+  // Limpa tudo e cai fora.
   delete server_input;
   delete server_output;
   return 0;

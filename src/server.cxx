@@ -91,7 +91,7 @@ static EventManager::Status accept_event (Connection *serv) {
   return EventManager::CONTINUE;
 }
 
-// MAIN
+//// MAIN ////
 
 int main (int argc, char **argv) {
 	if (argc != 2) {
