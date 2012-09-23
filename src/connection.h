@@ -61,19 +61,50 @@ class Connection {
 
   protected:
 
-    // Informação dos endereços local e remoto da conexão.
-    struct sockaddr_in  local_info_,
-                        remote_info_;
-
     // Construtor protegido para impedir intâncias diretas da classe Connection,
     // que é abstrata. Recebe o socket usado na conexão, que será fechado quando
     // o objeto for destruído.
     Connection (int sockfd);
 
+    // Devolvem ponteiros opacos para as informações locais e remotas.
+    const sockaddr* local_info () const {
+      return (const struct sockaddr*)(&local_info_);
+    }
+    const sockaddr* remote_info () const {
+      return (const struct sockaddr*)(&remote_info_);
+    }
+
+    // Configura as informações locais da conexão.
+    void set_local_info (short family, unsigned long address,
+                         unsigned short port);
+    void set_local_info (const struct sockaddr_in& info) {
+      local_info_ = info;
+    }
+    void set_local_info (const Connection* another) {
+      local_info_ = another->local_info_;
+    }
+    void set_local_info ();
+
+    // Configura as informações remotas da conexão.
+    void set_remote_info (const struct sockaddr_in& info) {
+      remote_info_ = info;
+    }
+    void set_remote_info (short family, const std::string& address,
+                          unsigned short port);
+
+    // Associa o socket da conexão ao endereço local.
+    void bind ();
+
+    // Devolve o tamanhodos atributps local_into_ e remote_info_
+    static int info_size () { return sizeof(struct sockaddr_in); }
+
   private:
 
     // Descritor do socket.
     int                 sockfd_;
+    // Informação dos endereços local e remoto da conexão.
+    struct sockaddr_in  local_info_,
+                        remote_info_;
 
 };
 

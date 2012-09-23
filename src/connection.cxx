@@ -2,6 +2,7 @@
 #include "connection.h"
 
 #include <cstdlib>
+#include <cstdio>
 #include <strings.h>
 #include <arpa/inet.h>
 
@@ -18,6 +19,7 @@ Connection::Connection (int sockfd) : sockfd_(sockfd) {
     cerr << "[Connection::Connection - Socket inválido]\n";
     exit(1);
   }
+  // acho que o C++ já faz isso, mas é bom garantir
   bzero(&local_info_, sizeof(local_info_));
   bzero(&remote_info_, sizeof(remote_info_));
 }
@@ -50,6 +52,42 @@ string Connection::remote_address () const {
   char addr[INET_ADDRSTRLEN];
   return
     inet_ntop(AF_INET, &remote_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
+}
+
+void Connection::set_local_info (short family, unsigned long address,
+                                 unsigned short port) {
+	local_info_.sin_family      = family;
+	local_info_.sin_addr.s_addr = htonl(address);
+	local_info_.sin_port        = htons(port);
+}
+
+void Connection::set_local_info () {
+  int info_len = sizeof(local_info_);
+  if (getsockname(sockfd_, (struct sockaddr*)&local_info_,
+                  (socklen_t*)&info_len)) {
+  	perror("Connection::set_local_info() - getsockname error");
+  	exit(1);
+  }
+}
+
+void Connection::set_remote_info (short family, const string& address,
+                                  unsigned short port) {
+	remote_info_.sin_family      = family;
+	remote_info_.sin_port        = htons(port);
+  // O endereço IP passado para a função tem que ser válido (fornecido por
+  // gethostbyname(), por exemplo)
+	if (inet_pton(AF_INET, address.c_str(), &remote_info_.sin_addr) <= 0) {
+		perror("Connection::set_remote_info(family,addr,port) - inet_pton error");
+		exit(1);
+	}
+}
+
+void Connection::bind () {
+	if (::bind(sockfd(),
+             (struct sockaddr*)&local_info_, sizeof(local_info_)) == -1) {
+		perror("Connection::bind - bind failed");
+		exit(1);
+	}
 }
 
 } // namespace ep2

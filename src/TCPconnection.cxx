@@ -34,14 +34,8 @@ TCPConnection::TCPConnection (int sockfd) :
   Connection(sockfd) {}
 
 void TCPConnection::host (unsigned short port) {
-	local_info_.sin_family      = AF_INET;
-	local_info_.sin_addr.s_addr = htonl(INADDR_ANY);
-	local_info_.sin_port        = htons(port);
-	if (bind(sockfd(),
-           (struct sockaddr*)&local_info_, sizeof(local_info_)) == -1) {
-		perror("bind");
-		exit(1);
-	}
+  set_local_info(AF_INET, INADDR_ANY, port);
+  bind();
 	if (listen(sockfd(), LISTENQ) == -1) {
 		perror("listen");
 		exit(1);
@@ -52,30 +46,23 @@ Connection* TCPConnection::accept () {
 	int                 connfd;
   struct sockaddr_in  remote_info;
 	int                 remote_info_size;
-	char                enderecoRemoto[MAXDATASIZE + 1];
-	remote_info_size = sizeof(remote_info_);
+	remote_info_size = sizeof(remote_info);
 	if ((connfd = ::accept(sockfd(), (struct sockaddr*) &remote_info,
                        (socklen_t *) &remote_info_size)) == -1 ) {
 		perror("accept");
 		exit(1);
   }
   /* Imprimindo os dados do socket remoto */
-  printf("[Dados do socket remoto: (IP: %s, PORTA: %d conectou)]\n",
-         inet_ntop(
-           AF_INET,
-           &(remote_info.sin_addr).s_addr,
-           enderecoRemoto,
-           sizeof(enderecoRemoto)
-          ),
-         ntohs(remote_info.sin_port));
+  cout  << "[Nova conexão com "
+        << local_address() << ":" << local_port() << "]\n";
+  // TODO comment
   TCPConnection *accepted = new TCPConnection(connfd);
-  accepted->local_info_  = local_info_;
-  accepted->remote_info_ = remote_info;
+  accepted->set_local_info(this);
+  accepted->set_remote_info(remote_info);
   return accepted;
 }
 
 bool TCPConnection::connect (const string& hostname, unsigned short port) {
-  int     dadosLocalLen;
   /* Para uso com o gethostbyname */
   struct  hostent *hptr;
   char    enderecoIPServidor[INET_ADDRSTRLEN];
@@ -102,37 +89,20 @@ bool TCPConnection::connect (const string& hostname, unsigned short port) {
   printf("[Conectando no servidor no IP %s]\n",enderecoIPServidor);
   printf("[o comando 'exit' encerra a conexão]\n");
 
-	bzero(&remote_info_, sizeof(remote_info_));
-  dadosLocalLen=sizeof(local_info_);
-  bzero(&local_info_, dadosLocalLen);
-	remote_info_.sin_family = AF_INET;
-	remote_info_.sin_port   = htons(port);
+  set_remote_info(AF_INET, enderecoIPServidor, port);
 
-  /* O endereço IP passado para a função é o que foi retornado na gethostbyname */
-	if (inet_pton(AF_INET, enderecoIPServidor, &remote_info_.sin_addr) <= 0) {
-		perror("inet_pton error");
-		exit(1);
-	}
-
-	if (::connect(sockfd(), (struct sockaddr *) &remote_info_,
-              sizeof(remote_info_)) < 0) {
+	if (::connect(sockfd(), remote_info(), info_size()) < 0) {
 		perror("connect error");
 		exit(1);
 	}
    
   /* Imprimindo os dados do socket local */
-  if (getsockname(sockfd(), (struct sockaddr*)&local_info_,
-                  (socklen_t*)&dadosLocalLen)) {
-  	perror("getsockname error");
-  	exit(1);
-  }
+  set_local_info();
 
-  printf(
-    "Dados do socket local: (IP: %s, PORTA: %d)\n",
-    local_address().c_str(),
-    ntohs(local_info_.sin_port)
-  );
-  /***************************************/
+#ifdef EP2_DEBUG
+  cout << "[Socket local " << local_address() << ":" << local_port() << "]\n";
+#endif
+
   return true;
 }
 

@@ -9,6 +9,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <iostream>
+
 #include "command.h"
 
 #define MAXLINE 4096
@@ -16,19 +18,14 @@
 namespace ep2 {
 
 using std::string;
+using std::cout;
 
 UDPConnection::UDPConnection () :
   Connection(socket(AF_INET, SOCK_DGRAM, 0)) {}
 
 void UDPConnection::host (unsigned short port) {
-	local_info_.sin_family      = AF_INET;
-	local_info_.sin_addr.s_addr = htonl(INADDR_ANY);
-	local_info_.sin_port        = htons(port);
-	if (bind(sockfd(),
-           (struct sockaddr*)&local_info_, sizeof(local_info_)) == -1) {
-		perror("bind");
-		exit(1);
-	}
+  set_local_info(AF_INET, INADDR_ANY, port);
+  bind();
 }
 
 Connection* UDPConnection::accept () {
@@ -38,7 +35,7 @@ Connection* UDPConnection::accept () {
 	char                enderecoRemoto[INET_ADDRSTRLEN];
   char                recvline[MAXLINE+1];
 
-  puts("[Aceitando conexão UDP]");
+  cout << "[Aceitando conexão UDP]\n";
   n = recvfrom(sockfd(), recvline, MAXLINE, 0, (struct sockaddr*)&remote_info,
                (socklen_t*)&remote_info_size);
   recvline[n] = '\0';
@@ -54,40 +51,33 @@ Connection* UDPConnection::accept () {
           ),
          ntohs(remote_info.sin_port));
   UDPConnection *accepted = new UDPConnection();
-  //accepted->local_info_  = local_info_;
-  accepted->remote_info_ = remote_info;
-  if (::connect(accepted->sockfd(), (struct sockaddr*)&accepted->remote_info_,
-                sizeof(accepted->remote_info_)) < 0) {
+  accepted->set_remote_info(remote_info);
+  if (::connect(accepted->sockfd(), accepted->remote_info(), info_size()) < 0) {
 		perror("connect error");
     delete accepted;
 		exit(1);
   }
-  socklen_t dadosLocalLen = sizeof(accepted->local_info_);
-  if (getsockname(accepted->sockfd(), (struct sockaddr*)&accepted->local_info_,
-                  (socklen_t*)&dadosLocalLen)) {
-  	perror("getsockname error");
-  	exit(1);
-  }
-  printf(
-    "[Dados do socket local: (IP: %s, PORTA: %d)]\n",
-    accepted->local_address().c_str(),
-    accepted->local_port()
-  );
-  if (::sendto(sockfd(), (const void*)&accepted->local_info_.sin_port,
-               sizeof(accepted->local_info_.sin_port), 0,
+  accepted->set_local_info();
+#ifdef EP2_DEBUG
+  cout  << "[Socket local "
+        << accepted->local_address() << ":" << accepted->local_port() << "]\n";
+#endif
+  unsigned short port = htons(accepted->local_port());
+  if (::sendto(sockfd(), (const void*)&port, sizeof(port), 0,
                (struct sockaddr*)&remote_info, remote_info_size) < 0) {
-    perror("connection confirmation error");
+    perror("UDP::accept - connection confirmation error");
     delete accepted;
     exit(1);
   }
-  puts("[UDP conectou]");
+#ifdef EP2_DEBUG
+  cout << "[UDP conectou]\n";
+#endif
   return accepted;
 }
 
 bool UDPConnection::connect (const string& hostname, unsigned short port) {
   /* Para uso com o gethostbyname */
   struct    hostent *hptr;
-  socklen_t dadosLocalLen;
   char      enderecoIPServidor[INET_ADDRSTRLEN];
 
   if ( (hptr = gethostbyname(hostname.c_str())) == NULL) {
@@ -111,40 +101,27 @@ bool UDPConnection::connect (const string& hostname, unsigned short port) {
   * enderecoIPServidor */
   printf("[Conectando no IP %s]\n",enderecoIPServidor);
 
-  dadosLocalLen=sizeof(local_info_);
-	remote_info_.sin_family = AF_INET;
-	remote_info_.sin_port   = htons(port);
+  set_remote_info(AF_INET, string(enderecoIPServidor, INET_ADDRSTRLEN), port);
 
-  // O endereço IP passado para a função é o que foi retornado na gethostbyname
-	if (inet_pton(AF_INET, enderecoIPServidor, &remote_info_.sin_addr) <= 0) {
-		perror("inet_pton error");
+	if (::connect(sockfd(), remote_info(), info_size()) < 0) {
+		perror("UDP::connect() - connect error");
 		exit(1);
 	}
 
-	if (::connect(sockfd(), (struct sockaddr*)&remote_info_,
-                sizeof(remote_info_)) < 0) {
-		perror("connect error");
-		exit(1);
-	}
+  set_local_info();
 
-  /* Imprimindo os dados do socket local */
-  if (getsockname(sockfd(), (struct sockaddr*)&local_info_,
-                  (socklen_t*)&dadosLocalLen)) {
-  	perror("getsockname error");
-  	exit(1);
-  }
-
-  printf(
-    "[Dados do socket local: (IP: %s, PORTA: %d)]\n",
-    local_address().c_str(),
-    local_port()
-  );
+#ifdef EP2_DEBUG
+  cout << "[Socket local " << local_address() << ":" << local_port() << "]\n";
+#endif
 
   if (::send(sockfd(), "connect_me", sizeof "connect_me", 0) < 0) {
-    perror("connect request error");
+    perror("UDP::connect() - connection request error");
     exit(1);
   }
-  printf("[Enviou pedido de conexão]\n");
+
+#ifdef EP2_DEBUG
+  cout << "[Enviou pedido de conexão]\n";
+#endif
 
   char      recvline[MAXLINE+1];
   ssize_t   n;
@@ -156,11 +133,10 @@ bool UDPConnection::connect (const string& hostname, unsigned short port) {
     ntohs(*(unsigned short*)recvline)
   );
 
-  remote_info_.sin_port = *(unsigned short*)recvline;
+  set_remote_info(AF_INET, remote_address(), ntohs(*(unsigned short*)recvline));
 
-	if (::connect(sockfd(), (struct sockaddr*)&remote_info_,
-              sizeof(remote_info_)) < 0) {
-		perror("connect 2 error");
+	if (::connect(sockfd(), remote_info(), info_size()) < 0) {
+		perror("UDP::connect() - connect 2 error");
 		exit(1);
 	}
 
