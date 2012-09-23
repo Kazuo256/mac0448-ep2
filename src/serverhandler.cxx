@@ -25,6 +25,7 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
 #ifdef EP2_DEBUG
   cout << "[Comando recebido: " << static_cast<string>(cmd) << "]\n";
 #endif
+  // Esse código não é exatamente elegante, mas não tivemos tempo de fazer nada melhor.
   switch(cmd.opcode()) {
     // ID requisitado: envia o descritor do socket da conexão como ID.
     case Command::REQUEST_ID: {
