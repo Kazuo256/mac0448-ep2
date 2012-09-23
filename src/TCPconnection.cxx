@@ -3,23 +3,19 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <ctime>
-#include <errno.h>
 #include <netdb.h>
 #include <sys/types.h>
-#include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 
 #include <string>
 #include <iostream>
 
 #include "command.h"
 
+// Usado por TCPConnection::host()
 #define LISTENQ 1
-#define MAXDATASIZE 100
+// Usado por TCPConnection::receive()
 #define MAXLINE 4096
 
 namespace ep2 {

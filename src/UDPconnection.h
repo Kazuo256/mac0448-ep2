@@ -6,13 +6,16 @@
 
 namespace ep2 {
 
+/// Implementação da classe abstrata Connection usando protocolo UDP.
 class UDPConnection : public Connection {
 
   public:
 
+    // Construtor
     UDPConnection ();
     
-    // Overwritten methods
+    // Métodos virtuais sobreescritos da classe Connection:
+
     void host (unsigned short port);
     Connection* accept ();
 
