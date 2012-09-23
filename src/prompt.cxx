@@ -1,10 +1,6 @@
 
 #include "prompt.h"
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <vector>
 #include <sstream>
 #include <iostream>
 
@@ -22,8 +18,8 @@ using std::cout;
 using std::stringstream;
 
 void Prompt::init () {
-  printf("> ");
-  fflush(stdout);
+  // na verdade serve para imprimir o "> " no terminal ^^
+  (cout << "> ").flush();
 }
 
 void Prompt::add_command (const string& cmd, const CommandHandler& handler) {
@@ -35,7 +31,7 @@ bool Prompt::check_input () {
   string cmd, arg, data;
   getline(cin, line);
   if (cin.eof()) {
-    putchar('\n');
+    cout << '\n';
     return false;
   }
   stringstream tokens(line);
@@ -45,8 +41,7 @@ bool Prompt::check_input () {
   tokens.get(*msg.rdbuf());
   data = msg.str();
   run_cmd(cmd, arg, data);
-  printf("> ");
-  fflush(stdout);
+  (cout << "> ").flush();
   return true;
 }
 
@@ -54,7 +49,7 @@ void Prompt::run_cmd (const string& cmd, const string& arg,
                       const string& data) {
   CommandMap::iterator it = cmd_map_.find(cmd);
   if (it == cmd_map_.end())
-    cout << "Unknown command " << cmd << "\n";
+    cout << "[Unknown command " << cmd << "]\n";
   else
     it->second(arg, data);
 }
