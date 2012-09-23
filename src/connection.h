@@ -10,7 +10,7 @@ namespace ep2 {
 
 class Command;
 
-/// Interface para conexões de rede.
+/// Classe abstrata para conexões de rede.
 /** Há duas possíveis maneiras de se obter objetos que implementem essa
   * interface. Uma é através dos construtores das classes filhas,
   * TCPConnection e UDPConnection. A outra é através do método accept(),
@@ -74,28 +74,34 @@ class Connection {
       return (const struct sockaddr*)(&remote_info_);
     }
 
-    // Configura as informações locais da conexão.
+    // Configura as informações locais da conexão...
+    // ... passando os dados explícitos;
     void set_local_info (short family, unsigned long address,
                          unsigned short port);
+    // ... copiando de uma estrutura sockaddr_in fornecida;
     void set_local_info (const struct sockaddr_in& info) {
       local_info_ = info;
     }
+    // ... copiando as informações locais de outra conexão;
     void set_local_info (const Connection* another) {
       local_info_ = another->local_info_;
     }
+    // .. ou tentando obter as informações sozinho (usando getsockname).
     void set_local_info ();
 
-    // Configura as informações remotas da conexão.
+    // Configura as informações remotas da conexão...
+    // ... copiando de uma estrutura sockaddr_in fornacida;
     void set_remote_info (const struct sockaddr_in& info) {
       remote_info_ = info;
     }
+    // ... ou passando os dados explicitamente (address tem que ser válido).
     void set_remote_info (short family, const std::string& address,
                           unsigned short port);
 
     // Associa o socket da conexão ao endereço local.
     void bind ();
 
-    // Devolve o tamanhodos atributps local_into_ e remote_info_
+    // Devolve o tamanho dos atributos local_into_ e remote_info_
     static int info_size () { return sizeof(struct sockaddr_in); }
 
   private:

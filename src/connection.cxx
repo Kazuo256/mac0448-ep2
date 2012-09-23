@@ -34,6 +34,8 @@ Connection::~Connection () {
   close(sockfd_);
 }
 
+// Getters
+
 unsigned short Connection::local_port () const {
   return ntohs(local_info_.sin_port);
 }
@@ -53,6 +55,8 @@ string Connection::remote_address () const {
   return
     inet_ntop(AF_INET, &remote_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
 }
+
+// Setters
 
 void Connection::set_local_info (short family, unsigned long address,
                                  unsigned short port) {
@@ -81,6 +85,8 @@ void Connection::set_remote_info (short family, const string& address,
 		exit(1);
 	}
 }
+
+// Outros
 
 void Connection::bind () {
 	if (::bind(sockfd(),
