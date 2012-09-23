@@ -127,13 +127,14 @@ bool UDPConnection::connect (const string& hostname, unsigned short port) {
   ssize_t   n;
   n = recv(sockfd(), recvline, MAXLINE, 0);
   recvline[n] = '\0';
+  unsigned short new_port = ntohs(*(unsigned short*)recvline);
 
   printf(
     "[UDP connection response: %hu]\n",
-    ntohs(*(unsigned short*)recvline)
+    new_port
   );
 
-  set_remote_info(AF_INET, remote_address(), ntohs(*(unsigned short*)recvline));
+  set_remote_info(AF_INET, remote_address(), new_port);
 
 	if (::connect(sockfd(), remote_info(), info_size()) < 0) {
 		perror("UDP::connect() - connect 2 error");
