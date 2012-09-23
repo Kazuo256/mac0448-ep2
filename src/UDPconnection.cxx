@@ -1,6 +1,7 @@
 
 #include "UDPconnection.h"
 
+#include <cstdlib>
 #include <cstdio>
 #include <strings.h>
 #include <sys/types.h>
@@ -17,20 +18,7 @@ namespace ep2 {
 using std::string;
 
 UDPConnection::UDPConnection () :
-  Connection(socket(AF_INET, SOCK_DGRAM, 0)) {
-  bzero(&local_info_, sizeof(local_info_));
-  bzero(&remote_info_, sizeof(remote_info_)); 
-}
-
-UDPConnection::~UDPConnection () {
-  if (remote_addr_.size()) {
-    printf(
-       "Dados do socket remoto: (IP: %s, PORTA: %d desconectou)\n",
-       remote_addr_.c_str(),
-       ntohs(remote_info_.sin_port)
-     );
-  }
-}
+  Connection(socket(AF_INET, SOCK_DGRAM, 0)) {}
 
 void UDPConnection::host (unsigned short port) {
 	local_info_.sin_family      = AF_INET;
@@ -68,7 +56,6 @@ Connection* UDPConnection::accept () {
   UDPConnection *accepted = new UDPConnection();
   //accepted->local_info_  = local_info_;
   accepted->remote_info_ = remote_info;
-  accepted->remote_addr_ = enderecoRemoto;
   if (::connect(accepted->sockfd(), (struct sockaddr*)&accepted->remote_info_,
                 sizeof(accepted->remote_info_)) < 0) {
 		perror("connect error");
@@ -198,26 +185,6 @@ void UDPConnection::send (const Command& cmd) {
     perror("write error");
     exit(1);
   }
-}
-
-unsigned short UDPConnection::local_port () const {
-  return ntohs(local_info_.sin_port);
-}
-
-string UDPConnection::local_address () const {
-  char addr[INET_ADDRSTRLEN];
-  return
-    inet_ntop(AF_INET, &local_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
-}
-
-unsigned short UDPConnection::remote_port () const {
-  return ntohs(remote_info_.sin_port);
-}
-
-string UDPConnection::remote_address () const {
-  char addr[INET_ADDRSTRLEN];
-  return
-    inet_ntop(AF_INET, &remote_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
 }
 
 } // namespace ep2

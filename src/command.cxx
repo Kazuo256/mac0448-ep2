@@ -44,8 +44,6 @@ Command::operator string () const {
     case REFUSE:
     case CONTINUE:
     case GIVE_ID:
-    case REFUSE_NICK:
-    case ACCEPT_NICK:
     case LIST_RESPONSE:
     case MSG_FAIL:
     case MSG_OK:

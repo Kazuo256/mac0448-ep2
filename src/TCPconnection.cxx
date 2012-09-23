@@ -28,25 +28,10 @@ using std::string;
 using std::cout;
 
 TCPConnection::TCPConnection () :
-  Connection(socket(AF_INET, SOCK_STREAM, 0)) {
-  bzero(&local_info_, sizeof(local_info_));
-  bzero(&remote_info_, sizeof(remote_info_));  
-}
+  Connection(socket(AF_INET, SOCK_STREAM, 0)) {}
 
 TCPConnection::TCPConnection (int sockfd) :
-  Connection(sockfd) {
-  bzero(&local_info_, sizeof(local_info_));
-  bzero(&remote_info_, sizeof(remote_info_));
-}
-
-TCPConnection::~TCPConnection () {
-#ifdef EP2_DEBUG
-  if (remote_info_.sin_addr.s_addr != htonl(INADDR_ANY)) {
-    cout  << "[Desconectou de " << remote_address() << ":" << remote_port()
-          << "]\n";
-  }
-#endif
-}
+  Connection(sockfd) {}
 
 void TCPConnection::host (unsigned short port) {
 	local_info_.sin_family      = AF_INET;
@@ -86,7 +71,6 @@ Connection* TCPConnection::accept () {
   TCPConnection *accepted = new TCPConnection(connfd);
   accepted->local_info_  = local_info_;
   accepted->remote_info_ = remote_info;
-  accepted->remote_addr_ = enderecoRemoto;
   return accepted;
 }
 
@@ -171,27 +155,6 @@ void TCPConnection::send (const Command& cmd) {
     exit(1);
   }
 }
-
-unsigned short TCPConnection::local_port () const {
-  return ntohs(local_info_.sin_port);
-}
-
-string TCPConnection::local_address () const {
-  char addr[INET_ADDRSTRLEN];
-  return
-    inet_ntop(AF_INET, &local_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
-}
-
-unsigned short TCPConnection::remote_port () const {
-  return ntohs(remote_info_.sin_port);
-}
-
-string TCPConnection::remote_address () const {
-  char addr[INET_ADDRSTRLEN];
-  return
-    inet_ntop(AF_INET, &remote_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
-}
-
 
 } // namespace ep2
 

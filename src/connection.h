@@ -2,12 +2,9 @@
 #ifndef EP2_CONNECTION_H_
 #define EP2_CONNECTION_H_
 
-#include <cstdlib>
-#include <cstdio>
 #include <netinet/in.h>
 
 #include <string>
-#include <iostream>
 
 namespace ep2 {
 
@@ -25,12 +22,7 @@ class Connection {
   public:
 
     // O destrututor fecha o socket
-    virtual ~Connection () {
-#ifdef EP2_DEBUG
-      std::cout << "[Closing socket " << sockfd_ << "]\n";
-#endif
-      close(sockfd_);
-    }
+    virtual ~Connection ();
 
     // Devolve o descritor do socket.
     int sockfd () const { return sockfd_; }
@@ -56,36 +48,32 @@ class Connection {
     virtual void send (const Command& cmd) = 0;
 
     // Devolve a porta local da conexão.
-    virtual unsigned short local_port () const = 0;
+    unsigned short local_port () const;
 
     // Devolve o endereço local da conexão.
-    virtual std::string local_address () const = 0;
+    std::string local_address () const;
 
     // Devolve a porta remota da conexão.
-    virtual unsigned short remote_port () const = 0;
+    unsigned short remote_port () const;
 
     // Devolve o endereço remoto da conexão.
-    virtual std::string remote_address () const = 0;
+    std::string remote_address () const;
 
   protected:
+
+    // Informação dos endereços local e remoto da conexão.
+    struct sockaddr_in  local_info_,
+                        remote_info_;
 
     // Construtor protegido para impedir intâncias diretas da classe Connection,
     // que é abstrata. Recebe o socket usado na conexão, que será fechado quando
     // o objeto for destruído.
-    Connection (int sockfd) : sockfd_(sockfd) {
-      if (sockfd_ < 0) {
-        std::cerr << "[Connection::Connection - Socket inválido]\n";
-        exit(1);
-      }
-    }
+    Connection (int sockfd);
 
   private:
 
     // Descritor do socket.
     int                 sockfd_;
-    // Informação do endereço local e remoto da conexão.
-    //struct sockaddr_in  local_info_,
-    //                    remote_info_;
 
 };
 

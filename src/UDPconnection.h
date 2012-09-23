@@ -4,8 +4,6 @@
 
 #include "connection.h"
 
-#include <netinet/in.h>
-
 namespace ep2 {
 
 class UDPConnection : public Connection {
@@ -13,7 +11,6 @@ class UDPConnection : public Connection {
   public:
 
     UDPConnection ();
-    ~UDPConnection ();
     
     // Overwritten methods
     void host (unsigned short port);
@@ -23,17 +20,6 @@ class UDPConnection : public Connection {
 
     Command receive ();
     void send (const Command& cmd);
-
-    unsigned short local_port () const;
-    std::string local_address () const;
-    unsigned short remote_port () const;
-    std::string remote_address () const;
-
-  private:
-
-    struct sockaddr_in  local_info_,
-                        remote_info_;
-    std::string         remote_addr_;
 
 };
 
