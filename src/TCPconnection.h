@@ -8,6 +8,7 @@
 
 namespace ep2 {
 
+/// Implementação da interface Connection usando protocolo TCP.
 class TCPConnection : public Connection {
 
   public:

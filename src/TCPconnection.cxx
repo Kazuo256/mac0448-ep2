@@ -12,13 +12,11 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <poll.h>
 
 #include <string>
 #include <iostream>
 
 #include "command.h"
-#include "serverhandler.h"
 
 #define LISTENQ 1
 #define MAXDATASIZE 100
@@ -28,25 +26,6 @@ namespace ep2 {
 
 using std::string;
 using std::cout;
-
-/*
- *  struct sockaddr {
- *    sa_family_t sa_family;
- *    char        sa_data[14];
- *  };
- *
- *  struct sockaddr_in {
- *    short            sin_family;   // e.g. AF_INET
- *    unsigned short   sin_port;     // e.g. htons(3490)
- *    struct in_addr   sin_addr;     // see struct in_addr, below
- *    char             sin_zero[8];  // zero this if you want to
- *  };
- *
- *  struct in_addr {
- *    unsigned long s_addr;  // load with inet_aton()
- *  };
- *
- */
 
 TCPConnection::TCPConnection () :
   Connection(socket(AF_INET, SOCK_STREAM, 0)) {
@@ -61,13 +40,12 @@ TCPConnection::TCPConnection (int sockfd) :
 }
 
 TCPConnection::~TCPConnection () {
-  if (remote_addr_.size()) {
-    printf(
-       "Dados do socket remoto: (IP: %s, PORTA: %d desconectou)\n",
-       remote_addr_.c_str(),
-       ntohs(remote_info_.sin_port)
-     );
+#ifdef EP2_DEBUG
+  if (remote_info_.sin_addr.s_addr != htonl(INADDR_ANY)) {
+    cout  << "[Desconectou de " << remote_address() << ":" << remote_port()
+          << "]\n";
   }
+#endif
 }
 
 void TCPConnection::host (unsigned short port) {

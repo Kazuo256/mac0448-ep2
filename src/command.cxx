@@ -37,10 +37,26 @@ Command::operator string () const {
       return "Nick refused";
     case ACCEPT_NICK:
       return "Nick accepted";
+    case DISCONNECT:
+    case LIST_REQUEST:
+    case CHUNK:
+    case ACCEPT:
+    case REFUSE:
+    case CONTINUE:
+    case GIVE_ID:
+    case REFUSE_NICK:
+    case ACCEPT_NICK:
+    case LIST_RESPONSE:
+    case MSG_FAIL:
+    case MSG_OK:
+    case SEND_FAIL:
+    case SEND_OK:
+    case MSG:
+    case SEND:
+      return "Valid command";
+      // não houve necessiade de depurar esses comandos
     default:
       return "Unknown command";
-    // na verdade tem os outros comandos, mas não foi necessário fazer esses
-    // outros casos para depurar o programa
   }
 }
 #endif

@@ -4,12 +4,13 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <netinet/in.h>
+
 #include <string>
 #include <iostream>
 
 namespace ep2 {
 
-// "Forward declaration"
 class Command;
 
 /// Interface para conexões de rede.
@@ -80,7 +81,11 @@ class Connection {
 
   private:
 
-    int sockfd_;
+    // Descritor do socket.
+    int                 sockfd_;
+    // Informação do endereço local e remoto da conexão.
+    //struct sockaddr_in  local_info_,
+    //                    remote_info_;
 
 };
 
