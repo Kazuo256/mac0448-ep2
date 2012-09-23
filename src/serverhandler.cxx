@@ -23,25 +23,23 @@ ServerHandler::ServerHandler (ServerData* serverdata) :
 
 void ServerHandler::handle (Connection *client, const Command& cmd) {
 #ifdef EP2_DEBUG
-  cout << static_cast<string>(cmd) << "\n";
+  cout << "[Comando recebido: " << static_cast<string>(cmd) << "]\n";
 #endif
-  int id = -1;
-  Command response = Command::null_cmd();
-  Command::ArgList arg_list;
   Connection* resp_connec;
-  string sender, oldnick;
-  stringstream args;
+  string sender;
   switch(cmd.opcode()) {
-    case Command::REQUEST_ID:
-      args << client->sockfd();
-      client->send(Command::give_id(args.str()));
+    case Command::REQUEST_ID: {
+        stringstream args;
+        args << client->sockfd();
+        client->send(Command::give_id(args.str()));
+      }
       break;
     case Command::NICK:
       if (serverdata_->used(cmd.arg(0))) {
 		    client->send(Command::refuse_nick());
       } else {
-        id = atoi(cmd.arg(1).c_str());
-        oldnick = serverdata_->get_link(id);
+        int id = atoi(cmd.arg(1).c_str());
+        string oldnick = serverdata_->get_link(id);
         if (oldnick.size()) {
           serverdata_->erase_user(oldnick);
           serverdata_->remove_link(id);
@@ -51,9 +49,11 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
         client->send(Command::accept_nick());
       }
       break;
-    case Command::LIST_REQUEST:
-      serverdata_->get_list(arg_list);
-      client->send(Command::list_response(arg_list));
+    case Command::LIST_REQUEST: {
+        Command::ArgList arg_list;
+        serverdata_->get_list(arg_list);
+        client->send(Command::list_response(arg_list));
+      }
       break;
     case Command::MSG:
       if (serverdata_->used(cmd.arg(0))) {
@@ -94,7 +94,9 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
       }
       break;
     default:
-      response = cmd;
+#ifdef EP2_DEBUG
+      cout << "[Comando inesperado]\n";
+#endif
       break;
   }
 }
