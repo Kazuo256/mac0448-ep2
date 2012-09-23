@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <strings.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #include <iostream>
 
@@ -102,6 +103,26 @@ void Connection::bind () {
 		perror("Connection::bind - bind failed");
 		exit(1);
 	}
+}
+
+string Connection::get_host (const std::string& hostname) {
+  // Usa gethostbyname() para obter o endereço verdadeiro do host.
+  struct  hostent *hptr;
+  if ( (hptr = gethostbyname(hostname.c_str())) == NULL) {
+    cerr << "Connection::get_host - gethostbyname error\n";
+    exit(1);
+  }
+  // Verificando se de fato o endereço é AF_INET
+  if (hptr->h_addrtype != AF_INET) {
+    cerr << "Connection::get_host - h_addrtype mismatch\n";
+    exit(1);
+  }
+  char addr[INET_ADDRSTRLEN];
+  if (inet_ntop(AF_INET, hptr->h_addr_list[0], addr, INET_ADDRSTRLEN) == NULL) {
+    cerr << "Connection::get_host - inet_ntop error\n";
+    exit (1);
+  }
+  return addr;
 }
 
 } // namespace ep2

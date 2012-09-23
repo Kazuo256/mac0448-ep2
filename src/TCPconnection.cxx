@@ -3,7 +3,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -61,7 +60,7 @@ Connection* TCPConnection::accept () {
   accepted->set_remote_info(remote_info);
 #ifdef EP2_DEBUG
   // Imprime as informações remotas da nova conexão.
-  cout  << "[Nova conexão com "
+  cout  << "[Nova conexão TCP com "
         << accepted->remote_address() << ":"
         << accepted->remote_port() << "]\n";
 #endif
@@ -69,31 +68,10 @@ Connection* TCPConnection::accept () {
   return accepted;
 }
 
-// Usado para obter o endereço do host a partir o resultado de gethostbyname().
-static string get_hostaddr (const char* addr) {
-  char addr_str[INET_ADDRSTRLEN];
-  if (inet_ntop(AF_INET, addr, addr_str, INET_ADDRSTRLEN) == NULL) {
-    cerr << "get_hostaddr - inet_ntop error\n";
-    exit (1);
-  }
-  return addr_str;
-}
-
 bool TCPConnection::connect (const string& hostname, unsigned short port) {
-  // Usa gethostbyname() para obter o endereço verdadeiro do host.
-  struct  hostent *hptr;
-  if ( (hptr = gethostbyname(hostname.c_str())) == NULL) {
-    cerr << "TCP::connect - gethostbyname error\n";
-    exit(1);
-  }
-  // Verificando se de fato o endereço é AF_INET
-  if (hptr->h_addrtype != AF_INET) {
-    cerr << "TCP::connect - h_addrtype mismatch\n";
-    exit(1);
-  }
-  // Configuramos as informações remotas da conexão usando sempre o primeiro IP
-  // retornado pelo DNS para o argumento hostname.
-  set_remote_info(AF_INET, get_hostaddr(hptr->h_addr_list[0]), port);
+  // Configuramos as informações remotas da conexão usando get_host() e a porta
+  // fornecida.
+  set_remote_info(AF_INET, get_host(hostname), port);
 #ifdef EP2_DEBUG
   cout  << "[Conectando com "
         << remote_address() << ":" << remote_port() << "]\n";

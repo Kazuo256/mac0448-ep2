@@ -104,6 +104,9 @@ class Connection {
     // Devolve o tamanho dos atributos local_into_ e remote_info_
     static int info_size () { return sizeof(struct sockaddr_in); }
 
+    // Devolve o endereço indicado pelo DNS para o hostname passado.
+    static std::string get_host (const std::string& hostname);
+
   private:
 
     // Descritor do socket.
