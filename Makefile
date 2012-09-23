@@ -40,7 +40,7 @@ include deps.makefile
 
 .PHONY: debug
 debug: CXXFLAGS += -g -DEP2_DEBUG
-debug: $(PROG_NAME)
+debug: all
 
 .PHONY: clean
 clean:
