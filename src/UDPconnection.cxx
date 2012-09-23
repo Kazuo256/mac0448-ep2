@@ -3,16 +3,15 @@
 
 #include <cstdlib>
 #include <cstdio>
-#include <strings.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <netdb.h>
 
 #include <iostream>
 
 #include "command.h"
 
+// Usado por UDPConnection::receive()
 #define MAXLINE 4096
 
 namespace ep2 {
@@ -39,17 +38,9 @@ Connection* UDPConnection::accept () {
   n = recvfrom(sockfd(), recvline, MAXLINE, 0, (struct sockaddr*)&remote_info,
                (socklen_t*)&remote_info_size);
   recvline[n] = '\0';
-#ifdef EP2_DEBUG
-  cout << "[Requisito de conexão UDP: " << recvline << "]\n";
-#endif
   // Cria a nova conexão para aceitar a requisição e configura ela.
   UDPConnection *accepted = new UDPConnection();
   accepted->set_remote_info(remote_info);
-#ifdef EP2_DEBUG
-  cout  << "[Nova conexão UDP com "
-        << accepted->remote_address() << ":"
-        << accepted->remote_port() << "]\n";
-#endif
   // Conecta com o remetente da requisição.
   if (::connect(accepted->sockfd(), accepted->remote_info(), info_size()) < 0) {
 		perror("UDP::accept - connect error");
@@ -59,10 +50,6 @@ Connection* UDPConnection::accept () {
   // Atualiza as informações locais da nova conexão.
   // (a chamada a ::connect garante endereço e porta locais para o socket)
   accepted->set_local_info();
-#ifdef EP2_DEBUG
-  cout  << "[A conexão foi aceita usando o endereço "
-        << accepted->local_address() << ":" << accepted->local_port() << "]\n";
-#endif
   // Envia para o remetente da requisição a porta na qual ele deve conectar.
   unsigned short port = htons(accepted->local_port());
   if (::sendto(sockfd(), (const void*)&port, sizeof(port), 0,
@@ -72,7 +59,10 @@ Connection* UDPConnection::accept () {
     exit(1);
   }
 #ifdef EP2_DEBUG
-  cout << "[Confirmação de conexão enviada]\n";
+  // Imprime as informações remotas da nova conexão.
+  cout  << "[Nova conexão UDP com "
+        << accepted->remote_address() << ":"
+        << accepted->remote_port() << "]\n";
 #endif
   // Devolve a nova conexão, pronta para ser usada. 
   return accepted;
@@ -94,30 +84,19 @@ bool UDPConnection::connect (const string& hostname, unsigned short port) {
   // Atualiza as informações locais da conexão
   // (a chamada a ::connect garante endereço e porta locais para o socket)
   set_local_info();
-#ifdef EP2_DEBUG
-  cout  << "[Tentando estabelecer Conexão de "
-        << local_address() << ":" << local_port() << " para "
-        << remote_address() << ":" << remote_port() << "]\n";
-#endif
   // Como é UDP, só conectar com o host não basta.
   // O host deve fornecer uma outra porta para essa conexão.
-  // Para isso, requisito essa porta fazendo uma espécie de handhsake.
+  // Para isso, requisito essa porta fazendo uma espécie de handshake.
   if (::send(sockfd(), "connect_me", sizeof "connect_me", 0) < 0) {
     perror("UDP::connect() - connection request error");
     exit(1);
   }
-#ifdef EP2_DEBUG
-  cout << "[Enviou pedido de conexão]\n";
-#endif
   // Obtém a porta enviada pelo host.
   char      recvline[MAXLINE+1];
   ssize_t   n;
   n = recv(sockfd(), recvline, MAXLINE, 0);
   recvline[n] = '\0';
   unsigned short new_port = ntohs(*(unsigned short*)recvline);
-#ifdef EP2_DEBUG
-  cout << "[Porta fornecida pelo host: " << new_port << "]\n";
-#endif
   // Atualizo as informações remotas para usar a porta correta.
   set_remote_info(AF_INET, remote_address(), new_port);
   // Conecto para poder mandar e receber pacotes mais facilmente.
