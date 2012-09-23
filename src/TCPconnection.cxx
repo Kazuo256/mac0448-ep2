@@ -73,10 +73,19 @@ Connection* TCPConnection::accept () {
   return accepted;
 }
 
+// Usado para obter o endereço do host a partir o resultado de gethostbyname().
+static string get_hostaddr (const char* addr) {
+  char addr_str[INET_ADDRSTRLEN];
+  if (inet_ntop(AF_INET, addr, addr_str, INET_ADDRSTRLEN) == NULL) {
+    cerr << "get_hostaddr - inet_ntop error\n";
+    exit (1);
+  }
+  return addr_str;
+}
+
 bool TCPConnection::connect (const string& hostname, unsigned short port) {
   // Usa gethostbyname() para obter o endereço verdadeiro do host.
   struct  hostent *hptr;
-  char    enderecoIPServidor[INET_ADDRSTRLEN];
   if ( (hptr = gethostbyname(hostname.c_str())) == NULL) {
     cerr << "TCP::connect - gethostbyname error\n";
     exit(1);
@@ -86,34 +95,27 @@ bool TCPConnection::connect (const string& hostname, unsigned short port) {
     cerr << "TCP::connect - h_addrtype mismatch\n";
     exit(1);
   }
-  //set_remote_info(AF_INET, hptr->h_addr_list[0], port);
-  /* Salvando o IP do servidor (Vai pegar sempre o primeiro IP
-  * retornado pelo DNS para o nome passado no shell)*/
-  if (inet_ntop(AF_INET, hptr->h_addr_list[0], enderecoIPServidor,
-                sizeof(enderecoIPServidor)) == NULL) {
-    fprintf(stderr,"inet_ntop :(\n");
-    exit (1);
-  }
-
-  /* A partir deste ponto o endereço IP do servidor estará na string
-  * enderecoIPServidor */
-  printf("[Conectando no servidor no IP %s]\n",enderecoIPServidor);
-  printf("[o comando 'exit' encerra a conexão]\n");
-
-  set_remote_info(AF_INET, enderecoIPServidor, port);
-
+  // Configuramos as informações remotas da conexão usando sempre o primeiro IP
+  // retornado pelo DNS para o argumento hostname.
+  set_remote_info(AF_INET, get_hostaddr(hptr->h_addr_list[0]), port);
+#ifdef EP2_DEBUG
+  cout  << "[Conectando com "
+        << remote_address() << ":" << remote_port() << "]\n";
+#endif
+  // Tenta conectar com o host.
 	if (::connect(sockfd(), remote_info(), info_size()) < 0) {
-		perror("connect error");
+		perror("TCP::connect - connect error");
 		exit(1);
 	}
-   
-  /* Imprimindo os dados do socket local */
+  // Atualiza as informações locais da conexão
+  // (a chamada a ::connect garante endereço e porta locais para o socket)
   set_local_info();
-
 #ifdef EP2_DEBUG
-  cout << "[Socket local " << local_address() << ":" << local_port() << "]\n";
+  // Imprime resultados
+  cout  << "[Conexão estabelicida de "
+        << local_address() << ":" << local_port() << " para "
+        << remote_address() << ":" << remote_port() << "]\n";
 #endif
-
   return true;
 }
 

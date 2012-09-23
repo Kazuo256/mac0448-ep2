@@ -296,7 +296,6 @@ int main(int argc, char **argv) {
     ID = atoi(cmd.arg(0).c_str());
   printf("Recebido ID %d\n", ID);
   // Prepara e entra em loop
-  prompt.init();
   prompt.add_command("/nick", nick_event);
   prompt.add_command("/list", list_event);
   prompt.add_command("/msg", msg_event);
@@ -304,6 +303,8 @@ int main(int argc, char **argv) {
   prompt.add_command("/accept", accept_event);
   prompt.add_command("/refuse", refuse_event);
   manager.add_event(STDIN_FILENO, EventManager::Callback(prompt_event));
+  //  TODO mensagens informativas
+  prompt.init();
   manager.loop();
   if (current_file.is_open()) current_file.close();
   delete server_input;

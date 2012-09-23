@@ -82,13 +82,6 @@ void Connection::set_local_info () {
   }
 }
 
-void Connection::set_remote_info (short family, unsigned long address,
-                                  unsigned short port) {
-	remote_info_.sin_family      = family;
-	remote_info_.sin_addr.s_addr = htonl(address);
-	remote_info_.sin_port        = htons(port);
-}
-
 void Connection::set_remote_info (short family, const string& address,
                                   unsigned short port) {
 	remote_info_.sin_family      = family;
