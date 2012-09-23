@@ -42,8 +42,12 @@ unsigned short Connection::local_port () const {
 
 string Connection::local_address () const {
   char addr[INET_ADDRSTRLEN];
-  return
-    inet_ntop(AF_INET, &local_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
+  if (inet_ntop(AF_INET, &local_info_.sin_addr.s_addr,
+                addr, INET_ADDRSTRLEN) == NULL) {
+    cerr << "Connection::local_address - inet_ntop error\n";
+    exit (1);
+  }
+  return addr;
 }
 
 unsigned short Connection::remote_port () const {
@@ -52,8 +56,12 @@ unsigned short Connection::remote_port () const {
 
 string Connection::remote_address () const {
   char addr[INET_ADDRSTRLEN];
-  return
-    inet_ntop(AF_INET, &remote_info_.sin_addr.s_addr, addr, INET_ADDRSTRLEN);
+  if (inet_ntop(AF_INET, &remote_info_.sin_addr.s_addr,
+                addr, INET_ADDRSTRLEN) == NULL) {
+    cerr << "Connection::remote_address - inet_ntop error\n";
+    exit (1);
+  }
+  return addr;
 }
 
 // Setters
@@ -72,6 +80,13 @@ void Connection::set_local_info () {
   	perror("Connection::set_local_info() - getsockname error");
   	exit(1);
   }
+}
+
+void Connection::set_remote_info (short family, unsigned long address,
+                                  unsigned short port) {
+	remote_info_.sin_family      = family;
+	remote_info_.sin_addr.s_addr = htonl(address);
+	remote_info_.sin_port        = htons(port);
 }
 
 void Connection::set_remote_info (short family, const string& address,

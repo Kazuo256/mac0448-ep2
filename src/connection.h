@@ -94,7 +94,11 @@ class Connection {
     void set_remote_info (const struct sockaddr_in& info) {
       remote_info_ = info;
     }
-    // ... ou passando os dados explicitamente (address tem que ser válido).
+    // ... passando os dados explicitamente;
+    void set_remote_info (short family, unsigned long address,
+                          unsigned short port);
+
+    // ... ou passando os dados indiretamente (address tem que ser válido).
     void set_remote_info (short family, const std::string& address,
                           unsigned short port);
 

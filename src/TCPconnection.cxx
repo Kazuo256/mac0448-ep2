@@ -26,56 +26,67 @@ namespace ep2 {
 
 using std::string;
 using std::cout;
+using std::cerr;
 
+// Esse construtor cria um novo socket TCP.
 TCPConnection::TCPConnection () :
   Connection(socket(AF_INET, SOCK_STREAM, 0)) {}
 
+// Esse contrutor é apenas usado internamente para garantir a funcionalidade do
+// método accept().
 TCPConnection::TCPConnection (int sockfd) :
   Connection(sockfd) {}
 
 void TCPConnection::host (unsigned short port) {
+  // Inicializa endereço local e dá bind().
   set_local_info(AF_INET, INADDR_ANY, port);
   bind();
+  // Prepara para ouvir conexões.
 	if (listen(sockfd(), LISTENQ) == -1) {
-		perror("listen");
+		perror("TCP::host - listen error");
 		exit(1);
 	}
 }
 
 Connection* TCPConnection::accept () {
+  // Usa accept() do C para receber conexões.
 	int                 connfd;
   struct sockaddr_in  remote_info;
-	int                 remote_info_size;
+	socklen_t           remote_info_size;
 	remote_info_size = sizeof(remote_info);
 	if ((connfd = ::accept(sockfd(), (struct sockaddr*) &remote_info,
-                       (socklen_t *) &remote_info_size)) == -1 ) {
-		perror("accept");
+                         &remote_info_size)) == -1 ) {
+		perror("TCP::accept - accept error");
 		exit(1);
   }
-  /* Imprimindo os dados do socket remoto */
-  cout  << "[Nova conexão com "
-        << local_address() << ":" << local_port() << "]\n";
-  // TODO comment
+  // Cria uma nova conexão TCP a partir dos dados obtidos e da conexão atual.
   TCPConnection *accepted = new TCPConnection(connfd);
   accepted->set_local_info(this);
   accepted->set_remote_info(remote_info);
+#ifdef EP2_DEBUG
+  // Imprime as informações remotas da nova conexão.
+  cout  << "[Nova conexão com "
+        << accepted->remote_address() << ":"
+        << accepted->remote_port() << "]\n";
+#endif
+  // Devolve a nova conexão, pronta para ser usada.
   return accepted;
 }
 
 bool TCPConnection::connect (const string& hostname, unsigned short port) {
-  /* Para uso com o gethostbyname */
+  // Usa gethostbyname() para obter o endereço verdadeiro do host.
   struct  hostent *hptr;
   char    enderecoIPServidor[INET_ADDRSTRLEN];
-
   if ( (hptr = gethostbyname(hostname.c_str())) == NULL) {
-    fprintf(stderr,"gethostbyname :(\n");
+    cerr << "TCP::connect - gethostbyname error\n";
     exit(1);
   }
-  /* Verificando se de fato o endereço é AF_INET */
+  // Verificando se de fato o endereço é AF_INET
   if (hptr->h_addrtype != AF_INET) {
-    fprintf(stderr,"h_addrtype :(\n");
+    cerr << "TCP::connect - h_addrtype mismatch\n";
     exit(1);
   }
+  //set_remote_info(AF_INET, hptr->h_addr_list[0], port);
   /* Salvando o IP do servidor (Vai pegar sempre o primeiro IP
   * retornado pelo DNS para o nome passado no shell)*/
   if (inet_ntop(AF_INET, hptr->h_addr_list[0], enderecoIPServidor,

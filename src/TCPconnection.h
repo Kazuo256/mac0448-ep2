@@ -6,14 +6,16 @@
 
 namespace ep2 {
 
-/// Implementação da interface Connection usando protocolo TCP.
+/// Implementação da classe abstrata Connection usando protocolo TCP.
 class TCPConnection : public Connection {
 
   public:
 
+    // Construtor.
     TCPConnection ();
     
-    // Overwritten methods
+    // Métodos virtuais sobreescritos da classe Connection:
+
     void host (unsigned short port);
     Connection* accept ();
 
