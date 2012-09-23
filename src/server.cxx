@@ -37,7 +37,7 @@ static ServerHandler    serverhandler(&serverdata);
 static TCPConnection    tcp_server;
 static UDPConnection    udp_server;
 
-// Eventos de input do servidor
+//// Eventos de input do servidor ////
 
 // Quando o usuário digita algo no terminal do servidor.
 // Na verdade, o servidor não tem terminal: ele ignora tudo menos o EOF.

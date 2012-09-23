@@ -51,10 +51,10 @@ Command::operator string () const {
     case SEND_OK:
     case MSG:
     case SEND:
-      return "comando OK";
+      return "sem problemas";
       // não houve necessiade de depurar esses comandos
     default:
-      return "command desconhecido";
+      return "desconhecido";
   }
 }
 #endif

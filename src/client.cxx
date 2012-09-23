@@ -15,8 +15,6 @@
 #include "eventmanager.h"
 #include "command.h"
 
-#define MAXLINE 4096
-
 using std::string;
 using std::stringstream;
 using std::ifstream;
@@ -32,15 +30,29 @@ using ep2::UDPConnection;
 using ep2::EventManager;
 using ep2::Command;
 
+// AVISO: esse arquivo acabou ficando muito grande pois não tivemos tempo de
+// refatorá-lo mais. A ideia era ter implementado um ClientHandler a partir da
+// interface CommandHandler, mas não deu.
+
+// Informações sobre o host.
 static string                       hostname;
 static unsigned short               port;
+// Gerenciador de eventos de input.
 static EventManager                 manager;
+// Prompt para o usuário.
 static Prompt                       prompt;
-//static TCPConnection                server_output, server_input;
+// Conexões com o servidor.
+//  server_input:   conexão primária, usada para enviar comandos para o servidor
+//                  e obter as respostas quando houver.
+//  server_output:  conexão secundŕia, usada para receber comandos do servidor.
 static Connection                   *server_output, *server_input;
+// ID desse cliente no servidor.
 static int                          ID = -1;
+// Lista de pedidos pendentes de transferências vindas de outros clientes
+// conectados no servidor.
 static unordered_map<string,string> senders;
 
+// Cria as conexões usando TCP ou UDP de acordo com o parâmetro passado.
 static void create_server_connections (bool udp) {
   if (udp) {
     server_input = new UDPConnection;
@@ -51,43 +63,55 @@ static void create_server_connections (bool udp) {
   }
 }
 
-// EVENTOS DE INPUT
+//// Eventos de input do cliente ////
 
+// Quando o usuário digita algo no terminal.
 static EventManager::Status prompt_event () {
+  // Delega trabalho de tratar o input para o prompt.
+  // Se devolver false é porque o usuário quer encerrar o programa.
   return prompt.check_input()
-    ? EventManager::CONTINUE
-    : EventManager::EXIT;
+    ? EventManager::CONTINUE  // continua ouvindo o terminal
+    : EventManager::EXIT;     // para de tratar todos os eventos
 }
 
+// Quando o servidor manda um comando pela conexão secundária.
 static EventManager::Status server_event () {
+  // Pega o comando do servidor.
   Command cmd = server_output->receive();
 #ifdef EP2_DEBUG
-  cout << "\n[Received command: " << static_cast<string>(cmd) << "]";
+  cout << "\n[Comando recebido: " << static_cast<string>(cmd) << "]";
 #endif
+  // Pode ser um comando de mensagem de outro cliente ou de transferência de
+  // arquivo de outro cliente.
   switch (cmd.opcode()) {
     case Command::MSG:
     {
+      // Verifica integridade do comando.
       if (cmd.num_args() < 2)
         cout << "\n[Bad message from server]\n";
       else {
+        // Se estiver OK, exibe para o usuário.
         cout << "\n[Message from '" << cmd.arg(0) << "':] ";
-        cout << cmd.arg(1) << "\n> ";
-        cout.flush();
+        cout << cmd.arg(1) << "\n";
+        prompt.init();
       }
     } break;
     case Command::SEND:
     {
+      // Verifica integridade do comando
       if (cmd.num_args() < 2)
         cout << "\n[Bad send command from server]\n";
       else {
+        // Se estiver OK, avisa o usuário e adiciona na lista de transferências
+        // pendentes.
         senders[cmd.arg(0)] = cmd.arg(1);
         cout << "\n['" << cmd.arg(0) << "' wants to send file '" << cmd.arg(1) << "']";
-        cout << "\n[To accept it use '/accept <user>']";
-        cout << "\n> ";
-        cout.flush();
+        cout << "\n[To accept it use '/accept <user>']\n";
+        prompt.init();
       }
     } break;
   }
+  // Sempre continua ouvindo comandos do servidor.
   return EventManager::CONTINUE;
 }
 
