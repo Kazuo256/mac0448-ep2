@@ -228,20 +228,19 @@ static void transfer_event (const string& target, const string& filepath) {
         // cliente. Assim é possível abrir uma conexão TCP direta e transferir
         // o arquivo parte por parte (Jack, o Estripador feelings).
         TCPConnection transfer;
-        unsigned short port = atoi(response.arg(1).c_str());
-        cout << "[Enviando para " << response.arg(0) << ":" << port << "]\n";
-        transfer.connect(response.arg(0), 8080);
+        cout << "[Enviando arquivo...]\n";
+        transfer.connect(response.arg(0), EP2_TRANSFER_HOST_PORT);
         char chunk[8*255+1];
         while (file.good()) {
           file.read(chunk, 8*255);
           size_t n = file.gcount();
           chunk[n] = '\0';
-          cout << "[Enviando chunk de tamanho " << n << "]\n";
           transfer.send(Command::chunk(chunk));
           // Sempre confirma a transferência
           Command check = transfer.receive();
           if (check.opcode() != Command::CONTINUE) break;
         }
+        cout << "[Transferência concluída]\n";
       }
       break;
     case Command::SEND_FAIL:
@@ -297,6 +296,7 @@ static void accept_event (const string& sender, const string& unused) {
   // Abre o arquivo para escrever os dados recebidos.
   ofstream file((string("downloads/")+it->second).c_str(),
                 ios_base::out | ios_base::binary);
+  cout << "[Recebendo arquivo...]\n";
   // Recebe os pedaços do arquivo.
   while (true) {
     Command bytes = download->receive();
@@ -344,6 +344,7 @@ static void refuse_event (const string& sender, const string& unused) {
   // da lista de transferências pendentes.
   server_input->send(Command::refuse(sender));
   senders.erase(sender);
+  cout << "[Transferência de '" << sender << "' recusada]\n";
 }
 
 //// MAIN ////

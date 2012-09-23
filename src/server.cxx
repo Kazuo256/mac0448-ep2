@@ -62,9 +62,13 @@ static EventManager::Status command_event (Connection* client) {
     serverdata.erase_connection(client);
     if (nick.size()) {
       serverdata.erase_user(nick);
+#ifdef EP2_DEBUG
       cout << "[Cliente com nick '" << nick << "' desconectando]\n";
     } else
       cout << "[Cliente anônimo ou conexão secundária sendo encerrada]\n";
+#else
+    }
+#endif
     delete client;
     // Para de receber comandos dese cliente.
     return EventManager::STOP;
