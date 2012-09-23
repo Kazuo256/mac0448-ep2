@@ -66,7 +66,7 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
       // Verifica se o alvo da mensagem existe.
       if (serverdata_->used(cmd.arg(0))) {
         // Pega o alvo e o nick do remetente.
-        Connection *target = serverdata_->get_connection(cmd.arg(0));
+        Connection *target = serverdata_->get_user(cmd.arg(0));
         string sendernick = serverdata_->get_link(client->sockfd());
         // Manda a mensagem para o alvo e uma confirmação para o remetente.
         target->send(Command::msg(sendernick, cmd.arg(1)));
@@ -80,11 +80,11 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
         // Verifica se o alvo realmente existe.
         if (serverdata_->used(cmd.arg(0))) {
           // Repassa para o alvo o pedido de transferência.
-          Connection *target = serverdata_->get_connection(cmd.arg(0));
+          Connection *target = serverdata_->get_user(cmd.arg(0));
           target->send(Command::send(sendernick, cmd.arg(1)));
         } else {
           // Alvo não existe, envia de volta pro remetente a falha no envio.
-          Connection *sender = serverdata_->get_connection(sendernick);
+          Connection *sender = serverdata_->get_user(sendernick);
           if (sender)
             sender->send(Command::send_fail("Usuário não existe"));
         }
@@ -96,7 +96,7 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
         // Pega o alvo e repassa a confirmação de transferência, junto com as
         // informações necessárias para que os clientes estabeleçam uma conexão
         // entre si.
-        Connection *target = serverdata_->get_connection(cmd.arg(0));
+        Connection *target = serverdata_->get_user(cmd.arg(0));
         stringstream port; // para transformar unsigned short em string
         port << client->remote_port();
         target->send(Command::send_ok(client->remote_address(), port.str()));
@@ -109,7 +109,7 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
       // Verifica se o alvo realmente existe.
       if (serverdata_->used(cmd.arg(0))) {
         // Pega o alvo e avisa ele que a transferência foi recusada.
-        Connection *target = serverdata_->get_connection(cmd.arg(0));
+        Connection *target = serverdata_->get_user(cmd.arg(0));
         target->send(Command::send_fail("Usuário recusou o arquivo"));
       }
       // Anolagamente ao ACCEPT, não precisa fazer nada se o alvo não existir.

@@ -40,28 +40,30 @@ class ServerData {
     void add_connection (Connection* connection);
     void erase_connection (Connection* connection);
 
+    // Métodos para manipular os nicks registrados.
+    void set_user (const std::string& user, Connection* connection);
+    Connection* get_user (const std::string& user);
+    bool used (const std::string& user);
+    void erase_user (const std::string& key);
+    void get_list (std::vector<std::string>& list);
+
     // Métodos para manipular as ligações entre nicks e clientes.
     void link_connections (int key, const std::string& user);
     std::string get_link (int key) const;
     void remove_link (int key);
-
-    // UserTable
-    void set_user (const std::string& user, Connection* connection);
-    Connection* get_connection (const std::string& user);
-    bool used (const std::string& user);
-    void erase_connection (const std::string& key);
-    std::string get_user (const Connection* connection);
-    void erase_user (const Connection* connection);
-    void erase_user (const std::string& key);
-    void get_list (std::vector<std::string>& list);
     
   private:
+
+    // Para facilitar o uso interno.
     typedef std::tr1::unordered_set<Connection*>              ConnectionTable;
     typedef std::tr1::unordered_map<int, std::string>         LinkTable;
     typedef std::tr1::unordered_map<std::string, Connection*> UserTable;
 
-    UserTable         user_;
+    // Tabela de conexões gerais.
     ConnectionTable   connections_;
+    // Tabela de nicks.
+    UserTable         user_;
+    // Tabela de ligações entre conexões primárias e nicks.
     LinkTable         links_;
 };
   
