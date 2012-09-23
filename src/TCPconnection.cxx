@@ -120,21 +120,25 @@ bool TCPConnection::connect (const string& hostname, unsigned short port) {
 }
 
 Command TCPConnection::receive () {
+  // Usa read() para ler pacote vindos da rede através da conexão.
   char cmdline[MAXLINE+1];
   int n=read(sockfd(), cmdline, MAXLINE);
 	if (n < 0) {
-		perror("read error");
+		perror("TCP::receive - read error");
 		exit(1);
 	}
   cmdline[n]=0;
+  // Transforma em Command e devolve.
   return Command::from_packet(string(cmdline, n));
 }
 
 void TCPConnection::send (const Command& cmd) {
+  // Contrói pacote a partir do objeto Command.
   string packet = cmd.make_packet();
+  // Usa write() para enviar o pacote para a rede através da conexão.
   size_t size = packet.size();
   if (write(sockfd(), packet.c_str(), size) < 0) {
-    perror("write error");
+    perror("TCP::send - write error");
     exit(1);
   }
 }

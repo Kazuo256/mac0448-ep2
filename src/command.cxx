@@ -29,14 +29,14 @@ string Command::make_packet () const {
 Command::operator string () const {
   switch(opcode_) {
     case REQUEST_ID:
-      return "ID requested.";
+      return "requisito de ID.";
     case NICK:
-      return string("Nick requested: ")
+      return string("requisito de nick: ")
              + (data_.size() ? data_[0] : "<empty>");
     case REFUSE_NICK:
-      return "Nick refused";
+      return "nick recusado";
     case ACCEPT_NICK:
-      return "Nick accepted";
+      return "nick aceito";
     case DISCONNECT:
     case LIST_REQUEST:
     case CHUNK:
@@ -51,10 +51,10 @@ Command::operator string () const {
     case SEND_OK:
     case MSG:
     case SEND:
-      return "Valid command";
+      return "comando OK";
       // não houve necessiade de depurar esses comandos
     default:
-      return "Unknown command";
+      return "command desconhecido";
   }
 }
 #endif
