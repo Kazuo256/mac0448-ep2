@@ -1,0 +1,11 @@
+
+To use the cmake:
+  $ mkdir build
+  $ cd build
+  $ cmake ..
+  $ make
+
+To use the Makefile:
+  $ make
+
+
