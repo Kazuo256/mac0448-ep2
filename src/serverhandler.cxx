@@ -25,8 +25,6 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
 #ifdef EP2_DEBUG
   cout << "[Comando recebido: " << static_cast<string>(cmd) << "]\n";
 #endif
-  Connection* resp_connec;
-  string sender;
   switch(cmd.opcode()) {
     // ID requisitado: envia o descritor do socket da conexão como ID.
     case Command::REQUEST_ID: {
@@ -93,21 +91,28 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
       }
       break;
     case Command::ACCEPT:
+      // Verifica se o alvo realmente existe.
       if (serverdata_->used(cmd.arg(0))) {
-        resp_connec = serverdata_->get_connection(cmd.arg(0));
-        sender = serverdata_->get_link(client->sockfd());
-        stringstream port;
+        // Pega o alvo e repassa a confirmação de transferência, junto com as
+        // informações necessárias para que os clientes estabeleçam uma conexão
+        // entre si.
+        Connection *target = serverdata_->get_connection(cmd.arg(0));
+        stringstream port; // para transformar unsigned short em string
         port << client->remote_port();
-        cout << "PORTA " << port.str() << "/" << client->remote_port() << "\n";
-        resp_connec->send(Command::send_ok(client->remote_address(), port.str()));
+        target->send(Command::send_ok(client->remote_address(), port.str()));
       }
+      // O próprio cliente não permite que o usuário envie accept's semd que
+      // haja transferências pendentes, então não precisa fazer nada caso o
+      // alvo não exista.
       break;
     case Command::REFUSE:
+      // Verifica se o alvo realmente existe.
       if (serverdata_->used(cmd.arg(0))) {
-        resp_connec = serverdata_->get_connection(cmd.arg(0));
-        sender = serverdata_->get_link(client->sockfd());
-        resp_connec->send(Command::send_fail("Usuário recusou o arquivo"));
+        // Pega o alvo e avisa ele que a transferência foi recusada.
+        Connection *target = serverdata_->get_connection(cmd.arg(0));
+        target->send(Command::send_fail("Usuário recusou o arquivo"));
       }
+      // Anolagamente ao ACCEPT, não precisa fazer nada se o alvo não existir.
       break;
     default:
 #ifdef EP2_DEBUG
