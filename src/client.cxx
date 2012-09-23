@@ -307,6 +307,7 @@ int main(int argc, char **argv) {
   prompt.init();
   manager.loop();
   if (current_file.is_open()) current_file.close();
+  server_input->send(Command::disconnect());
   delete server_input;
   delete server_output;
   return 0;

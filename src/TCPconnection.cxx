@@ -94,7 +94,7 @@ bool TCPConnection::connect (const string& hostname, unsigned short port) {
 }
 
 Command TCPConnection::receive () {
-  // Usa read() para ler pacote vindos da rede através da conexão.
+  // Usa read() para ler pacotes vindos da rede através da conexão.
   char cmdline[MAXLINE+1];
   int n=read(sockfd(), cmdline, MAXLINE);
 	if (n < 0) {

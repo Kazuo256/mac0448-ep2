@@ -60,7 +60,7 @@ Connection* UDPConnection::accept () {
   // (a chamada a ::connect garante endereço e porta locais para o socket)
   accepted->set_local_info();
 #ifdef EP2_DEBUG
-  cout  << "[A conexão foi aceita usando o endereço  "
+  cout  << "[A conexão foi aceita usando o endereço "
         << accepted->local_address() << ":" << accepted->local_port() << "]\n";
 #endif
   // Envia para o remetente da requisição a porta na qual ele deve conectar.
@@ -79,90 +79,81 @@ Connection* UDPConnection::accept () {
 }
 
 bool UDPConnection::connect (const string& hostname, unsigned short port) {
-  /* Para uso com o gethostbyname */
-  struct    hostent *hptr;
-  char      enderecoIPServidor[INET_ADDRSTRLEN];
-
-  if ( (hptr = gethostbyname(hostname.c_str())) == NULL) {
-    fprintf(stderr,"gethostbyname :(\n");
-    exit(1);
-  }
-  /* Verificando se de fato o endereço é AF_INET */
-  if (hptr->h_addrtype != AF_INET) {
-    fprintf(stderr,"h_addrtype :(\n");
-    exit(1);
-  }
-  /* Salvando o IP do servidor (Vai pegar sempre o primeiro IP
-  * retornado pelo DNS para o nome passado no shell)*/
-  if (inet_ntop(AF_INET, hptr->h_addr_list[0], enderecoIPServidor,
-                sizeof(enderecoIPServidor)) == NULL) {
-    fprintf(stderr,"inet_ntop :(\n");
-    exit (1);
-  }
-
-  /* A partir deste ponto o endereço IP do servidor estará na string
-  * enderecoIPServidor */
-  printf("[Conectando no IP %s]\n",enderecoIPServidor);
-
-  set_remote_info(AF_INET, string(enderecoIPServidor, INET_ADDRSTRLEN), port);
-
+  // Configuramos as informações remotas da conexão usando get_host() e a porta
+  // fornecida.
+  set_remote_info(AF_INET, get_host(hostname), port);
+#ifdef EP2_DEBUG
+  cout  << "[Conectando com "
+        << remote_address() << ":" << remote_port() << "]\n";
+#endif
+  // Tenta conectar com o host.
 	if (::connect(sockfd(), remote_info(), info_size()) < 0) {
 		perror("UDP::connect() - connect error");
 		exit(1);
 	}
-
+  // Atualiza as informações locais da conexão
+  // (a chamada a ::connect garante endereço e porta locais para o socket)
   set_local_info();
-
 #ifdef EP2_DEBUG
-  cout << "[Socket local " << local_address() << ":" << local_port() << "]\n";
+  cout  << "[Tentando estabelecer Conexão de "
+        << local_address() << ":" << local_port() << " para "
+        << remote_address() << ":" << remote_port() << "]\n";
 #endif
-
+  // Como é UDP, só conectar com o host não basta.
+  // O host deve fornecer uma outra porta para essa conexão.
+  // Para isso, requisito essa porta fazendo uma espécie de handhsake.
   if (::send(sockfd(), "connect_me", sizeof "connect_me", 0) < 0) {
     perror("UDP::connect() - connection request error");
     exit(1);
   }
-
 #ifdef EP2_DEBUG
   cout << "[Enviou pedido de conexão]\n";
 #endif
-
+  // Obtém a porta enviada pelo host.
   char      recvline[MAXLINE+1];
   ssize_t   n;
   n = recv(sockfd(), recvline, MAXLINE, 0);
   recvline[n] = '\0';
   unsigned short new_port = ntohs(*(unsigned short*)recvline);
-
-  printf(
-    "[UDP connection response: %hu]\n",
-    new_port
-  );
-
+#ifdef EP2_DEBUG
+  cout << "[Porta fornecida pelo host: " << new_port << "]\n";
+#endif
+  // Atualizo as informações remotas para usar a porta correta.
   set_remote_info(AF_INET, remote_address(), new_port);
-
+  // Conecto para poder mandar e receber pacotes mais facilmente.
 	if (::connect(sockfd(), remote_info(), info_size()) < 0) {
 		perror("UDP::connect() - connect 2 error");
 		exit(1);
 	}
-
+#ifdef EP2_DEBUG
+  // Imprime resultados
+  cout  << "[Conexão estabelicida de "
+        << local_address() << ":" << local_port() << " para "
+        << remote_address() << ":" << remote_port() << "]\n";
+#endif
   return true;
 }
 
 Command UDPConnection::receive() {
+  // Usa recv() para ler pacotes vindos da rede através da conexão.
   char cmdline[MAXLINE+1];
   int n=recv(sockfd(), cmdline, MAXLINE, 0);
 	if (n < 0) {
-		perror("read error");
+		perror("UDP::receive() - read error");
 		exit(1);
 	}
   cmdline[n]=0;
+  // Transforma em Command e devolve.
   return Command::from_packet(string(cmdline, n));
 }
 
 void UDPConnection::send (const Command& cmd) {
+  // Contrói pacote a partir do objeto Command.
   string packet = cmd.make_packet();
+  // Usa send() para enviar o pacote para a rede através da conexão.
   size_t size = packet.size();
   if (::send(sockfd(), packet.c_str(), size, 0) < 0) {
-    perror("write error");
+    perror("UDP::send - write error");
     exit(1);
   }
 }
