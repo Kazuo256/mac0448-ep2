@@ -7,24 +7,12 @@ using std::string;
 using std::vector;
 
 // ConnectionTable
-void ServerData::set_connection (Connection* connection) {
-	connections_[connection->sockfd()] = connection;
+void ServerData::add_connection (Connection* connection) {
+  connections_.insert(connection);
 }
 
-Connection* ServerData::get_connection (int key) {
-  ConnectionTable::const_iterator it = connections_.find(key);
-  if (it == connections_.end()) return NULL;
-  return it->second;
-}
-
-
-bool ServerData::used (int key) {
-  if (get_connection(key)) return true;
-  return false; 
-}
-
-void ServerData::erase_connection (int key) {
-	connections_.erase(key);
+void ServerData::erase_connection (Connection* connection) {
+	connections_.erase(connection);
 }
 
 // LinkTable
@@ -88,10 +76,6 @@ void ServerData::get_list (vector<string>& list) {
   for (UserTable::iterator it = user_.begin(); it != user_.end(); ++it) {
     list.push_back(it->first);
   }
-}
-
-void ServerData::add_event (int fd, const EventManager::Callback& callback) {
-  manager_.add_event(fd, callback);
 }
 
 } // namespace ep2

@@ -32,7 +32,7 @@ using ep2::ServerHandler;
 using ep2::ServerData;
 
 static EventManager     manager;
-static ServerData       serverdata(manager);
+static ServerData       serverdata;
 static ServerHandler    serverhandler(&serverdata);
 static TCPConnection    tcp_server;
 static UDPConnection    udp_server;
@@ -50,7 +50,7 @@ static EventManager::Status command_event (Connection* client) {
   if (cmd.opcode() == Command::DISCONNECT) {
     string nick = serverdata.get_link(client->sockfd());
     serverdata.remove_link(client->sockfd());
-    serverdata.erase_connection(client->sockfd());
+    serverdata.erase_connection(client);
     if (nick.size())
       serverdata.erase_user(nick);
     delete client;
@@ -63,7 +63,7 @@ static EventManager::Status command_event (Connection* client) {
 
 static EventManager::Status accept_event (Connection *serv) {
   Connection *client = serv->accept();
-  serverdata.set_connection(client);
+  serverdata.add_connection(client);
   manager.add_event(client->sockfd(), bind(command_event, client));
   return EventManager::CONTINUE;
 }
