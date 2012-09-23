@@ -76,15 +76,20 @@ void ServerHandler::handle (Connection *client, const Command& cmd) {
       } else // alvo não exite, avisa cliente que a mensagem falhou.
         client->send(Command::msg_fail());
       break;
-    case Command::SEND:
-      sender = serverdata_->get_link(client->sockfd());
-      if (serverdata_->used(cmd.arg(0))) {
-        resp_connec = serverdata_->get_connection(cmd.arg(0));
-        resp_connec->send(Command::send(sender, cmd.arg(1)));
-      } else {
-        resp_connec = serverdata_->get_connection(sender);
-        if (resp_connec)
-          resp_connec->send(Command::send_fail("Usuário não existe"));
+    case Command::SEND: {
+        // Pega nick do remetente.
+        string sendernick = serverdata_->get_link(client->sockfd());
+        // Verifica se o alvo realmente existe.
+        if (serverdata_->used(cmd.arg(0))) {
+          // Repassa para o alvo o pedido de transferência.
+          Connection *target = serverdata_->get_connection(cmd.arg(0));
+          target->send(Command::send(sendernick, cmd.arg(1)));
+        } else {
+          // Alvo não existe, envia de volta pro remetente a falha no envio.
+          Connection *sender = serverdata_->get_connection(sendernick);
+          if (sender)
+            sender->send(Command::send_fail("Usuário não existe"));
+        }
       }
       break;
     case Command::ACCEPT:
