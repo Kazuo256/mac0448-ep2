@@ -167,6 +167,106 @@ servidor.
 
 V. Protocolo
 
+  O protocolo da camada de aplicação do nosso EP é baseada na troca de comandos
+com argumentos. O cliente e o servidor trocam pacotes contendo um identificador
+do comando (chamado de código de operação) e os argumentos daquele comando, se
+houver. O pacote é formado usando dados binários direto, ao invés de strings
+como em HTTP e outros protocolos. E no caso usamos apenas valores de 1 byte para
+compor o pacote, então não temos problemas com endianness.
+  O pacote fica com o seguinte formato:
+
+   +--------+----------+-----------+-----------+-----------+-----------+-----+
+   | opcode | num_args | arg1_size | arg1_data | arg2_size | arg2_data | ... |
+   +--------+----------+-----------+-----------+-----------+-----------+-----+
+
+  Onde:
+
+    opcode:       é um byte contendo o código de operação do comando.
+    num_args:     é um byte contendo o número de argumentos do comando.
+    arg(i)_size:  é um byte contendo o tamanho do i-ésimo argumento do comando.
+    arg(i)_data:  é uma sequência de bytes compondo os dados do i-ésimo
+                  argumento do comando.
+
+  Se não houver argumentos, num_args é zero e não há nada depois dele. Há um
+máximo de 255 argumentos com 255 bytes cada, mas isso não compromete nada do
+funcionamento do sistema.
+  Antes de explicar melhor o que cada comando significa, é preciso explicar como
+as conexões entre o cliente e o servidor funcionam. Cada cliente precisa de duas
+conexões com o servidor para conseguir mandar e receber comandos. A primeira
+conexão - chamada de conexão primária - é estabelecida assim que o cliente roda.
+Ela serve para o cliente mandar comandos para o servidor e obter as respostas
+quando houver. A segunda conexão - a conexão secundária - é estabelecida assim
+que o usuário define um nick pela primeira vez. Ela serve para o cliente receber
+comandos do servidor ao mesmo tempo que pode continuar mandando comandos pela
+sua conexão primária. Em geral, comandos de mensagens e pedidos de
+transferências de arquivos enviados por outros clientes são o que chegam na
+conexão secundária, vindos do servidor.
+  Os comandos são divididos em três grupos de acordo com quem usa eles:
+  (os nomes usados são os mesmos que as constantes presentes no código)
+
+    -- Comandos usados pelo cliente:
+
+      REQUEST_ID(): é o primeiro comando enviado por uma conexão primária. O ID
+      é necessário para o servidor poder identificar o cliente e associar suas
+      conexões primária e secundária.
+
+      NICK(nick,id): é o primeiro comando enviado por uma conexão secundária.
+      Quando o servidor recebe esse comando, ele sabe que essa conexão é
+      secundária e pode tratá-la como tal. O comando em si é para o servidor
+      estabelecer uma ligação entre o ID do cliente e o seu nick. Assim, quando
+      um cliente envia uma mensagem para outro cliente, o servidor pode dizer
+      para o destinatário o remetente da mensagem.
+
+      DISCONNECT(): enviado para avisar o servidor que o cliente deseja terminar
+      a conexão.
+
+      LIST_REQUEST(): enviado para requisitar a lista de nick atualmente
+      registrados no servidor.
+
+      CHUNK(chunks...): comando usado entre clientes para mandar partes de um
+      arquivo sendo transferido. São usados no máximo 8 argumentos de no máximo
+      255 bytes cada.
+
+      ACCEPT(sender_nick): enviado para avisar o servidor que o cliente aceitou
+      a transferência do cliente associado ao nick sender_nick.
+
+      REFUSE(sender_nick): enviado para avisar o servidor que o cliente recusou
+      a transferência do cliente associado ao nick sender_nick.
+
+      CONTINUE(): comando usado entre clientes para indicar que o outro cliente
+      pode enviar o próximo pedaço do arquivo de uma transferência em execução.
+
+    -- Comandos usados pelo servidor:
+
+      GIVE_ID(id): enviado para informar o cliente do seu ID em resposta ao
+      comando REQUEST_ID.
+
+      REFUSE_NICK(): enviado para informar o cliente que o nick que ele
+      requisitou usando NICK é inválido (isso é, já está em uso).
+
+      ACCEPT_NICK(): enviado para informar o cliente que o nick que ele
+      requisitou usando NICK foi aceito.
+
+      LIST_RESPONSE(nicks...): enviado para o cliente em resposta ao comando
+      LIST_REQUEST, com cada argumento sendo um nick associado a um cliente
+      atualmente on-line no servidor.
+
+      MSG_FAIL(): enviado para notificar o cliente que a mensagem que ele tentou
+      enviar usando MSG não pode ser entregue pois o destinatário não existe.
+
+      MSG_OK(): enviado para notificar o cliente que a mensagem que ele tentou
+      enviar usando MSG foi entregue com sucesso so destinatário.
+
+      SEND_FAIL(info): notifica o cliente que o pedido de transferência de
+      arquivo que ele enviou usando SEND falhou, ou porque o destinatário não
+      existe ou porque ele mesmo recusou receber o arquivo. O argumento info
+      contém uma string descrevendo a causa da falha.
+
+      SEND_OK(address,port): notifica o cliente que o pedido de transferência de
+      arquivo que ele enviou usando SEND foi aceita pelo destinatário. Os
+      argumentos contêm as informações necessárias para que o cliente que enviou
+      o pedido possa abrir uma conexão direta com o destinatário para realizar a
+      transferência.
 
 VI. Organização do código:
 
