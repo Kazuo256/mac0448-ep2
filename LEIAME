@@ -120,7 +120,7 @@ sistema de bate-papo. Segue a lista de comandos que o prompt do cliente aceita:
 
     /msg <target> <msg>
 
-        Pede ao servidor para enviar a mensagem <msg> (pode conter maisde uma
+        Pede ao servidor para enviar a mensagem <msg> (pode conter mais de uma
       palavra) ao cliente associado ao nick <target>. É preciso ter um nick para
       realizar essa operação. Se o nick <target> não estiver associado a nenhum
       cliente, o servidor avisará da falha. Não é permitdo envias mensagens
