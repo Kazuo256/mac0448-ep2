@@ -202,7 +202,8 @@ sua conexão primária. Em geral, comandos de mensagens e pedidos de
 transferências de arquivos enviados por outros clientes são o que chegam na
 conexão secundária, vindos do servidor.
   Os comandos são divididos em três grupos de acordo com quem usa eles:
-  (os nomes usados são os mesmos que as constantes presentes no código)
+  (os nomes usados são os mesmos que as constantes presentes no código no
+   arquivo src/command.h)
 
     -- Comandos usados pelo cliente:
 
@@ -268,8 +269,28 @@ conexão secundária, vindos do servidor.
       o pedido possa abrir uma conexão direta com o destinatário para realizar a
       transferência.
 
-VI. Organização do código:
+    -- Comandos usados tanto pelo cliente quanto pelo servidor:
 
+      MSG(nick,msg): quando enviada pelo cliente para o servidor, indica que o
+      cliente deseja enviar a mensagem msg para o cliente associado a nick.
+      Quando enviado pelo servidor para um cliente, indica que o cliente
+      associado a nick está enviando a mensagem msg para ele.
+
+      SEND(nick,filename): quando enviada pelo cliente para o servidor, indica
+      que o cliente deseja transferir o arquivo filename para o cliente
+      associado a nick. Quando enviado pelo servidor para um cliente, indica que
+      o cliente associado a nick está pedindo para transferir o arquivo filename
+      para ele.
+
+  Os comandos são representados no código pela classe Command (src/command.h),
+que também é responsável por serializar comandos em pacotes e por recuperar
+comandos a partir dos pacotes. As conexões são representadas pela classe
+abstrata Connection (src/connection.h), que tem duas implementações,
+TCPConnection (src/TCPconnection.h) e UDPConnection (src/UDPconnection.h). A
+implementação com UDP usa RDT 1.0, isso é, assume que a rede é segura e os
+pacotes não só chegam no destino como também chegam sem bits trocados.
+
+VI. Organização do código:
 
   Segue a descrição do que cada arquivo de código é responsável. O nome dos
 arquivos é relativo à pasta src/, como visto na seção I desse LEIAME.
@@ -307,5 +328,20 @@ arquivos é relativo à pasta src/, como visto na seção I desse LEIAME.
 
     É o módulo EP1_DATE. Responsável por produzir strings de data formatadas,
   seguindo o padrão usado pelo Apache.
+
+  Por falta de tempo, o código não ficou tão organizado quanto gostaríamos. Mas
+todas as classes estão devidamente documentadas e as partes críticas do código
+estão comentadas com bastante clareza. Para saber o que cada classe faz,
+recomendamos ler o comentário antes de cada classe nos headers.
+  O arquivo principal do servidor é o src/server.cxx, embora a lógica principal
+dele esteja em src/serverhandler.cxx. O arquivo principal do cliente é o
+src/client.cxx, que de fato contém a lógica principal do cliente.
+  As implementações das conexões usando TCP e UDP podem ser vistas nas classes
+TCPConnection e UDPConnection, como mencionado na seção anterior. O código do
+sistema procura usar ponteiros para Connection, abstraindo o protocolo usado
+por trás da transferência de comandos.
+  Também como mencionado na seção anterior, é possível ver todos os comandos
+do nosso protocolo de camada de aplicação, assim como os algoritmos de converter
+esses comandos para pacotes e vice-versa, na classe Command.
 
 
